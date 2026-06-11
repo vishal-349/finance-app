@@ -16,7 +16,11 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataState } from "@/components/shared/DataState";
-import { ReorderControls, moveItem } from "@/components/shared/ReorderControls";
+import {
+  ReorderControls,
+  moveItem,
+  reindexVisibleWithinAll,
+} from "@/components/shared/ReorderControls";
 import { useCategories } from "@/hooks/useCategories";
 import type { Category, CategoryType } from "@/types";
 import { cn } from "@/lib/utils";
@@ -90,6 +94,13 @@ function CategoryList({
   const submit = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
+    const duplicate = items.some(
+      (c) => c.id !== editing?.id && c.name.trim().toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (duplicate) {
+      toast.error(`A ${type} category named “${trimmed}” already exists`);
+      return;
+    }
     try {
       if (editing) {
         await controller.update.mutateAsync({ id: editing.id, patch: { name: trimmed, color } });
@@ -106,7 +117,9 @@ function CategoryList({
 
   const handleMove = (from: number, to: number) => {
     const reordered = moveItem(visible, from, to);
-    controller.reorder.mutate(reordered.map((i) => i.id));
+    // Reindex across ALL categories so hidden/archived and the other type keep
+    // their positions and order values never collide.
+    controller.reorder.mutate(reindexVisibleWithinAll(controller.all, reordered));
   };
 
   return (

@@ -31,6 +31,11 @@ export async function upsertBudget(
   );
   if (existing.length) {
     await updateDocById<Budget>(uid, NAME, existing[0].id, { amount });
+    // Self-heal: if a race ever produced duplicates for this (month, category),
+    // collapse them to a single document.
+    await Promise.all(
+      existing.slice(1).map((dup) => deleteDocById(uid, NAME, dup.id)),
+    );
   } else {
     await createDoc<Budget>(uid, NAME, { monthKey, categoryId, amount });
   }

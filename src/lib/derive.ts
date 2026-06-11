@@ -99,13 +99,17 @@ export function buildMonthSummary(
 ): MonthSummary {
   const income = sumIncome(transactions);
   const actualExpenses = sumExpenses(transactions);
-  const plannedExpenses = budgets.reduce((acc, b) => acc + b.amount, 0);
+  // Dedupe by category so any accidental duplicate budget docs can't
+  // double-count toward the planned total.
+  const plannedByCategory = new Map(budgets.map((b) => [b.categoryId, b.amount]));
+  const plannedExpenses = [...plannedByCategory.values()].reduce((acc, v) => acc + v, 0);
   // What's left after spending, emergency-fund saving and SIP investing.
   const remainingBalance =
     income - actualExpenses - emergencyFundForMonth - sipForMonth;
   // Savings rate = money not spent on expenses, as a share of income.
-  const savingsRate =
-    income > 0 ? Math.max(0, (income - actualExpenses) / income) : 0;
+  // Allowed to go negative: spending more than you earn is a real deficit and
+  // must not be flattened to a misleading 0%.
+  const savingsRate = income > 0 ? (income - actualExpenses) / income : 0;
   const budgetUtilization = plannedExpenses > 0 ? actualExpenses / plannedExpenses : 0;
 
   return {

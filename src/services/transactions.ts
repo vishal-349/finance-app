@@ -1,4 +1,4 @@
-import { where, orderBy } from "firebase/firestore";
+import { where, orderBy, deleteField } from "firebase/firestore";
 import type { Transaction, MonthKey } from "@/types";
 import {
   COLLECTIONS,
@@ -78,9 +78,19 @@ export function updateTransaction(
   id: string,
   patch: Partial<TransactionInput>,
 ): Promise<void> {
-  const next: Partial<Transaction> = stripUndefined(patch);
+  const next: Record<string, unknown> = stripUndefined(patch);
   if (patch.date) next.monthKey = monthKeyFromISODate(patch.date);
-  return updateDocById<Transaction>(uid, NAME, id, next);
+  // When the type is known, delete the opposite reference so a document never
+  // ends up with BOTH categoryId and incomeSourceId (e.g. after switching an
+  // expense to income while editing).
+  if (patch.type === "expense") next.incomeSourceId = deleteField();
+  if (patch.type === "income") next.categoryId = deleteField();
+  return updateDocById<Transaction>(
+    uid,
+    NAME,
+    id,
+    next as Partial<Omit<Transaction, "id" | "createdAt" | "updatedAt">>,
+  );
 }
 
 export const deleteTransaction = (uid: string, id: string) =>

@@ -118,6 +118,6 @@ export interface MonthSummary {
   emergencyFundSaved: number;
   sipInvested: number;
   remainingBalance: number;
-  savingsRate: number; // 0..1
+  savingsRate: number; // share of income not spent; negative on a deficit
   budgetUtilization: number; // 0..1 (actual / planned)
 }

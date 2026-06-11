@@ -45,7 +45,11 @@ export async function restoreBackup(uid: string, backup: BackupFile): Promise<nu
         const ref = id
           ? doc(db, "users", uid, name, id)
           : doc(collection(db, "users", uid, name));
-        batch.set(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+        batch.set(
+          ref,
+          { createdAt: serverTimestamp(), ...data, updatedAt: serverTimestamp() },
+          { merge: true },
+        );
         total += 1;
       }
       await batch.commit();

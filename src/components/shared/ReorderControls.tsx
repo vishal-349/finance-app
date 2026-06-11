@@ -45,3 +45,24 @@ export function moveItem<T>(arr: T[], from: number, to: number): T[] {
   next.splice(to, 0, item);
   return next;
 }
+
+/**
+ * Produce the full ordered id list after reordering only a *visible* subset.
+ *
+ * When archived items are hidden (or another category type isn't shown), the
+ * reorder UI only knows about the visible items. Naively persisting `0..n` for
+ * just those collides with the order values of the hidden items. This walks the
+ * complete ordered list and slots the new visible order into the visible
+ * positions, leaving hidden items exactly where they are — so the persisted
+ * order is always collision-free.
+ */
+export function reindexVisibleWithinAll<T extends { id: string }>(
+  allOrdered: T[],
+  visibleNewOrder: T[],
+): string[] {
+  const visibleIds = new Set(visibleNewOrder.map((i) => i.id));
+  const queue = [...visibleNewOrder];
+  return allOrdered.map((item) =>
+    visibleIds.has(item.id) ? queue.shift()!.id : item.id,
+  );
+}

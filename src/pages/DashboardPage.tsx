@@ -51,7 +51,12 @@ export function DashboardPage() {
           />
           <StatCard label="Emergency Fund" value={money(summary.emergencyFundSaved)} icon={PiggyBank} hint="Saved this month" />
           <StatCard label="SIP Invested" value={money(summary.sipInvested)} icon={LineChart} hint="This month" />
-          <StatCard label="Savings Rate" value={formatPercent(summary.savingsRate)} icon={Percent} accent="success" />
+          <StatCard
+            label="Savings Rate"
+            value={formatPercent(summary.savingsRate)}
+            icon={Percent}
+            accent={summary.savingsRate < 0 ? "destructive" : "success"}
+          />
           <StatCard
             label="Budget Utilization"
             value={formatPercent(summary.budgetUtilization)}

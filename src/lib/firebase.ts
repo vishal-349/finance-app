@@ -41,6 +41,10 @@ export const googleProvider = new GoogleAuthProvider();
 
 // Firestore with offline persistence (multi-tab safe). This also makes derived
 // totals fast — reads are served from the local cache and kept in sync live.
+// `ignoreUndefinedProperties` means optional fields left `undefined` (e.g. a
+// note that wasn't filled in) are dropped on write instead of throwing
+// "Unsupported field value: undefined".
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  ignoreUndefinedProperties: true,
 });

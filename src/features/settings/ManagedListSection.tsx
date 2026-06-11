@@ -20,7 +20,11 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataState } from "@/components/shared/DataState";
-import { ReorderControls, moveItem } from "@/components/shared/ReorderControls";
+import {
+  ReorderControls,
+  moveItem,
+  reindexVisibleWithinAll,
+} from "@/components/shared/ReorderControls";
 import type { NamedEntity } from "@/services/namedCollection";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +79,13 @@ export function ManagedListSection<T extends NamedEntity>({
   const submit = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
+    const duplicate = all.some(
+      (i) => i.id !== editing?.id && i.name.trim().toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (duplicate) {
+      toast.error(`A ${itemNoun.toLowerCase()} named “${trimmed}” already exists`);
+      return;
+    }
     try {
       if (editing) {
         await controller.rename.mutateAsync({ id: editing.id, name: trimmed });
@@ -91,7 +102,9 @@ export function ManagedListSection<T extends NamedEntity>({
 
   const handleMove = (from: number, to: number) => {
     const reordered = moveItem(visible, from, to);
-    controller.reorder.mutate(reordered.map((i) => i.id));
+    // Reindex across ALL items so hidden/archived entries keep their positions
+    // and order values never collide.
+    controller.reorder.mutate(reindexVisibleWithinAll(all, reordered));
   };
 
   return (
