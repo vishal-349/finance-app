@@ -1,10 +1,41 @@
 import { useState } from "react";
-import { Wallet, Loader2, AlertTriangle } from "lucide-react";
+import {
+  Wallet,
+  Loader2,
+  AlertTriangle,
+  TrendingUp,
+  PiggyBank,
+  CalendarClock,
+  BarChart3,
+  ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { isFirebaseConfigured } from "@/lib/firebase";
+
+const FEATURES = [
+  {
+    icon: TrendingUp,
+    title: "Totals that update themselves",
+    text: "Add a transaction and every budget, total and report recalculates instantly — no manual tallying.",
+  },
+  {
+    icon: CalendarClock,
+    title: "Daily spend pacing",
+    text: "See how many days are left in the month and a safe amount to spend per day, per category.",
+  },
+  {
+    icon: PiggyBank,
+    title: "Emergency fund & SIP",
+    text: "Track monthly saving and investments with running totals and growth charts.",
+  },
+  {
+    icon: BarChart3,
+    title: "Monthly & yearly reports",
+    text: "Filter by month or year and see exactly where your money went.",
+  },
+];
 
 export function LoginPage() {
   const { signInWithGoogle } = useAuth();
@@ -22,17 +53,69 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-sm">
-        <CardContent className="flex flex-col items-center gap-6 p-8 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Wallet className="h-7 w-7" />
+    <div className="grid min-h-screen lg:grid-cols-2">
+      {/* Brand / value panel */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-black/10 blur-2xl" />
+
+        <div className="relative flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+            <Wallet className="h-5 w-5" />
           </div>
-          <div className="space-y-1">
+          <span className="text-lg font-semibold">FinTrack</span>
+        </div>
+
+        <div className="relative space-y-8">
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold leading-tight">
+              Your personal finance,
+              <br />
+              on autopilot.
+            </h1>
+            <p className="max-w-md text-sm text-primary-foreground/80">
+              Replace the spreadsheet. Track spending, budgets, savings and
+              investments — with totals derived automatically from your
+              transactions.
+            </p>
+          </div>
+
+          <ul className="space-y-4">
+            {FEATURES.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="flex gap-3">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-medium">{title}</p>
+                  <p className="text-sm text-primary-foreground/75">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="relative flex items-center gap-2 text-xs text-primary-foreground/70">
+          <ShieldCheck className="h-4 w-4" />
+          Private by design — your data is isolated to your account.
+        </p>
+      </div>
+
+      {/* Sign-in panel */}
+      <div className="flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="space-y-2 text-center lg:hidden">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+              <Wallet className="h-7 w-7" />
+            </div>
             <h1 className="text-2xl font-bold">FinTrack</h1>
+          </div>
+
+          <div className="space-y-2 text-center">
+            <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
             <p className="text-sm text-muted-foreground">
-              Your personal finance command center. Budgets, spends and
-              investments — all derived automatically from your transactions.
+              Sign in to manage your money. New here? Signing in creates your
+              account automatically.
             </p>
           </div>
 
@@ -60,8 +143,12 @@ export function LoginPage() {
             )}
             Continue with Google
           </Button>
-        </CardContent>
-      </Card>
+
+          <p className="text-center text-xs text-muted-foreground">
+            By continuing you agree to keep your finances tidy. 🙂
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

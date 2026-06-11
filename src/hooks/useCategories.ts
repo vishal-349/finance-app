@@ -35,8 +35,13 @@ export function useCategories() {
   };
 
   const create = useMutation({
-    mutationFn: (input: { name: string; type: CategoryType; color?: string; icon?: string }) =>
-      createCategory(uid, { ...input, order: nextOrder(input.type) }),
+    mutationFn: (input: {
+      name: string;
+      type: CategoryType;
+      color?: string;
+      icon?: string;
+      trackDailyPace?: boolean;
+    }) => createCategory(uid, { ...input, order: nextOrder(input.type) }),
     onSuccess: invalidate,
   });
 

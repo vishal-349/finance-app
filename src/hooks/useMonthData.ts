@@ -33,8 +33,8 @@ export function useMonthData(monthKey: MonthKey) {
 
   const categorySummaries = useMemo(
     () =>
-      buildCategorySummaries(categories.all, budgets.budgets, txns.transactions),
-    [categories.all, budgets.budgets, txns.transactions],
+      buildCategorySummaries(monthKey, categories.all, budgets.budgets, txns.transactions),
+    [monthKey, categories.all, budgets.budgets, txns.transactions],
   );
 
   const efForMonth = useMemo(

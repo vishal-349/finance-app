@@ -14,6 +14,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -215,6 +216,9 @@ export function ManagedListSection<T extends NamedEntity>({
             <DialogTitle>
               {editing ? `Rename ${itemNoun}` : `Add ${itemNoun}`}
             </DialogTitle>
+            <DialogDescription>
+              {itemNoun}s appear in transaction forms and reports.
+            </DialogDescription>
           </DialogHeader>
           <Input
             autoFocus

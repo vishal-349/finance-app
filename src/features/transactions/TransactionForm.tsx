@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -137,6 +138,9 @@ export function TransactionForm({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{editing ? "Edit transaction" : "Add transaction"}</DialogTitle>
+          <DialogDescription>
+            Record an expense or income — every total updates automatically.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { UtilizationBar, STATUS_TEXT } from "@/components/shared/UtilizationBar";
@@ -84,6 +85,14 @@ export function BudgetRow({ summary, onSetBudget, onViewHistory }: BudgetRowProp
           {planned > 0 ? formatPercent(utilization) : "—"}
         </span>
       </div>
+
+      {summary.safeDailySpend !== null && summary.daysLeft !== null && (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <CalendarClock className="h-3.5 w-3.5" />
+          {summary.daysLeft} {summary.daysLeft === 1 ? "day" : "days"} left · spend up to{" "}
+          <span className="font-medium text-foreground">{money(summary.safeDailySpend)}</span>/day
+        </p>
+      )}
     </div>
   );
 }

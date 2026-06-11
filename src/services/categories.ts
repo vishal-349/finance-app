@@ -17,7 +17,14 @@ export function listCategories(uid: string): Promise<Category[]> {
 
 export function createCategory(
   uid: string,
-  input: { name: string; type: CategoryType; order: number; color?: string; icon?: string },
+  input: {
+    name: string;
+    type: CategoryType;
+    order: number;
+    color?: string;
+    icon?: string;
+    trackDailyPace?: boolean;
+  },
 ): Promise<string> {
   return createDoc<Category>(uid, NAME, { archived: false, ...input });
 }
@@ -25,7 +32,9 @@ export function createCategory(
 export function updateCategory(
   uid: string,
   id: string,
-  patch: Partial<Pick<Category, "name" | "color" | "icon" | "order" | "archived">>,
+  patch: Partial<
+    Pick<Category, "name" | "color" | "icon" | "order" | "archived" | "trackDailyPace">
+  >,
 ): Promise<void> {
   return updateDocById<Category>(uid, NAME, id, patch);
 }

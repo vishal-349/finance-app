@@ -34,6 +34,11 @@ export interface Category extends BaseDoc {
   archived: boolean;
   color?: string;
   icon?: string;
+  /**
+   * Whether to show the "safe daily spend" pacing for this category (days left
+   * in month + remaining ÷ days left). Defaults to true when undefined.
+   */
+  trackDailyPace?: boolean;
 }
 
 export interface PaymentMethod extends BaseDoc {
@@ -108,6 +113,12 @@ export interface CategorySummary {
   utilization: number; // 0..n (1 = 100%)
   status: "safe" | "warning" | "over";
   transactionCount: number;
+  /** Whether daily-pace tracking is on for this category. */
+  paceEnabled: boolean;
+  /** Days remaining in the month — only for the current month, else null. */
+  daysLeft: number | null;
+  /** Remaining budget ÷ days left — null when not applicable. */
+  safeDailySpend: number | null;
 }
 
 export interface MonthSummary {

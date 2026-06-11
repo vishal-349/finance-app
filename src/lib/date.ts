@@ -2,6 +2,7 @@ import {
   format,
   parse,
   startOfMonth,
+  endOfMonth,
   addMonths,
   subMonths,
   parseISO,
@@ -63,4 +64,20 @@ export function formatDisplayDate(iso: string): string {
 
 export function monthKeyFromISODate(iso: string): MonthKey {
   return iso.slice(0, 7);
+}
+
+/** Is the given month the one we're currently in (per the system clock)? */
+export function isCurrentMonth(key: MonthKey): boolean {
+  return key === currentMonthKey();
+}
+
+/**
+ * Days remaining in the month *including today*, based on the system date.
+ * Returns null for any month other than the current one (pacing only makes
+ * sense for the month in progress).
+ */
+export function daysLeftInMonth(key: MonthKey): number | null {
+  if (!isCurrentMonth(key)) return null;
+  const today = new Date();
+  return endOfMonth(today).getDate() - today.getDate() + 1;
 }

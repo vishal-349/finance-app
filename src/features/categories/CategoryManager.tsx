@@ -7,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -74,6 +76,7 @@ function CategoryList({
   const [editing, setEditing] = useState<Category | null>(null);
   const [name, setName] = useState("");
   const [color, setColor] = useState(SWATCHES[0]);
+  const [pace, setPace] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<Category | null>(null);
 
   const visible = items.filter((i) => (showArchived ? true : !i.archived));
@@ -82,12 +85,14 @@ function CategoryList({
     setEditing(null);
     setName("");
     setColor(SWATCHES[items.length % SWATCHES.length]);
+    setPace(true);
     setDialogOpen(true);
   };
   const openEdit = (c: Category) => {
     setEditing(c);
     setName(c.name);
     setColor(c.color ?? SWATCHES[0]);
+    setPace(c.trackDailyPace !== false);
     setDialogOpen(true);
   };
 
@@ -103,10 +108,13 @@ function CategoryList({
     }
     try {
       if (editing) {
-        await controller.update.mutateAsync({ id: editing.id, patch: { name: trimmed, color } });
+        await controller.update.mutateAsync({
+          id: editing.id,
+          patch: { name: trimmed, color, trackDailyPace: pace },
+        });
         toast.success("Category updated");
       } else {
-        await controller.create.mutateAsync({ name: trimmed, type, color });
+        await controller.create.mutateAsync({ name: trimmed, type, color, trackDailyPace: pace });
         toast.success("Category added");
       }
       setDialogOpen(false);
@@ -189,6 +197,9 @@ function CategoryList({
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit category" : "Add category"}</DialogTitle>
+            <DialogDescription>
+              Set the name, color and whether to track daily spend pace.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -219,6 +230,15 @@ function CategoryList({
                   />
                 ))}
               </div>
+            </div>
+            <div className="flex items-start justify-between gap-3 rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="cat-pace">Track daily spend pace</Label>
+                <p className="text-xs text-muted-foreground">
+                  Show days left in the month and a safe amount to spend per day.
+                </p>
+              </div>
+              <Switch id="cat-pace" checked={pace} onCheckedChange={setPace} />
             </div>
           </div>
           <DialogFooter>

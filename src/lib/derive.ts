@@ -3,10 +3,12 @@ import type {
   Category,
   CategorySummary,
   EmergencyFund,
+  MonthKey,
   MonthSummary,
   SipInvestment,
   Transaction,
 } from "@/types";
+import { daysLeftInMonth } from "@/lib/date";
 
 /**
  * All derivation logic lives here. These pure functions turn raw records
@@ -57,6 +59,7 @@ function statusFor(utilization: number): CategorySummary["status"] {
  * history is never hidden.
  */
 export function buildCategorySummaries(
+  monthKey: MonthKey,
   categories: Category[],
   budgets: Budget[],
   transactions: Transaction[],
@@ -64,6 +67,7 @@ export function buildCategorySummaries(
   const spent = spentByCategory(transactions);
   const counts = countByCategory(transactions);
   const budgetByCat = new Map(budgets.map((b) => [b.categoryId, b.amount]));
+  const daysLeft = daysLeftInMonth(monthKey);
 
   const relevant = categories.filter(
     (c) =>
@@ -77,6 +81,11 @@ export function buildCategorySummaries(
       const actual = spent.get(category.id) ?? 0;
       const remaining = planned - actual;
       const utilization = planned > 0 ? actual / planned : actual > 0 ? Infinity : 0;
+      const paceEnabled = category.trackDailyPace !== false;
+      const safeDailySpend =
+        paceEnabled && daysLeft && daysLeft > 0 && remaining > 0
+          ? remaining / daysLeft
+          : null;
       return {
         category,
         planned,
@@ -85,6 +94,9 @@ export function buildCategorySummaries(
         utilization,
         status: statusFor(utilization),
         transactionCount: counts.get(category.id) ?? 0,
+        paceEnabled,
+        daysLeft: paceEnabled ? daysLeft : null,
+        safeDailySpend,
       } satisfies CategorySummary;
     })
     .sort((a, b) => a.category.order - b.category.order);

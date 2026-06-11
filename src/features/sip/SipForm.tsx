@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -81,6 +82,9 @@ export function SipForm({ open, onOpenChange, editing }: Props) {
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>{editing ? "Edit investment" : "Add investment"}</DialogTitle>
+          <DialogDescription>
+            Track a mutual fund, stock or custom investment for the month.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">

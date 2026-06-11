@@ -76,6 +76,21 @@ src/
 - `firestore.indexes.json` — composite indexes for the transaction queries
   (`monthKey + date`, `monthKey + categoryId + date`).
 
+## Daily-spend pacing
+
+Driven by the system clock: for the *current* month, `daysLeftInMonth` returns
+days remaining (inclusive of today), and each expense category derives a "safe
+daily spend" = remaining budget ÷ days left. Toggleable per category via
+`Category.trackDailyPace` (defaults on). Surfaced on the Dashboard and Budgets
+pages and in each budget row. Past/future months show no pacing.
+
+## Reports
+
+Two modes (tabbed): **Monthly** (independent month + year filter, summary +
+category breakdown + donut) and **Yearly** (income-vs-expense bars, totals,
+category breakdown). The monthly filter has its own local state so it never
+disturbs the global month selection used by the dashboard/transactions/budgets.
+
 ## Future-proofing
 
 New modules (loans, net worth, assets, credit cards, tax) drop in as a new

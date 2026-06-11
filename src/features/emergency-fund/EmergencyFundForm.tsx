@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -52,6 +53,9 @@ export function EmergencyFundForm({ open, onOpenChange, editing }: Props) {
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>{editing ? "Edit entry" : "Add monthly saving"}</DialogTitle>
+          <DialogDescription>
+            Log your planned and actual emergency-fund saving for the month.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">

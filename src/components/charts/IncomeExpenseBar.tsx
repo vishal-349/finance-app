@@ -42,7 +42,7 @@ export function IncomeExpenseBar({ data }: { data: MonthlyPoint[] }) {
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         <Bar dataKey="income" name="Income" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="expense" name="Expense" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="expense" name="Expense" fill="#6366f1" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

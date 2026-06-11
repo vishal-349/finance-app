@@ -45,6 +45,12 @@ export function PlannedVsActual({ summaries, onSelect }: Props) {
                 : `${money(s.remaining)} left`}
             </span>
           </div>
+          {s.safeDailySpend !== null && (
+            <p className="text-xs text-muted-foreground">
+              ≈ {money(s.safeDailySpend)}/day for {s.daysLeft} more{" "}
+              {s.daysLeft === 1 ? "day" : "days"}
+            </p>
+          )}
         </li>
       ))}
     </ul>
