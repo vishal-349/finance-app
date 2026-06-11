@@ -29,6 +29,7 @@ interface NamedController<T extends NamedEntity> {
   active: T[];
   isLoading: boolean;
   isError: boolean;
+  error?: unknown;
   refetch: () => void;
   create: { mutateAsync: (name: string) => Promise<unknown> };
   rename: { mutateAsync: (v: { id: string; name: string }) => Promise<unknown> };
@@ -51,7 +52,7 @@ export function ManagedListSection<T extends NamedEntity>({
   itemNoun,
   controller,
 }: ManagedListSectionProps<T>) {
-  const { all, isLoading, isError, refetch } = controller;
+  const { all, isLoading, isError, error, refetch } = controller;
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<T | null>(null);
   const [adding, setAdding] = useState(false);
@@ -108,6 +109,7 @@ export function ManagedListSection<T extends NamedEntity>({
         <DataState
           isLoading={isLoading}
           isError={isError}
+          error={error}
           onRetry={refetch}
           isEmpty={visible.length === 0}
           emptyTitle={`No ${itemNoun.toLowerCase()}s yet`}

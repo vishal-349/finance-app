@@ -72,6 +72,7 @@ export function useYearData(year: number) {
   return {
     isLoading: txnsQuery.isLoading || ef.isLoading || sip.isLoading,
     isError: txnsQuery.isError || ef.isError || sip.isError,
+    error: txnsQuery.error ?? ef.error ?? sip.error ?? null,
     refetch: txnsQuery.refetch,
     monthly,
     totals,

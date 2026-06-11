@@ -120,6 +120,7 @@ function CategoryList({
       <DataState
         isLoading={controller.isLoading}
         isError={controller.isError}
+        error={controller.error}
         onRetry={controller.refetch}
         isEmpty={visible.length === 0}
         emptyTitle="No categories yet"

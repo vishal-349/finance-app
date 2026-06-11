@@ -28,6 +28,8 @@ export function useMonthData(monthKey: MonthKey) {
     categories.isLoading || budgets.isLoading || txns.isLoading || ef.isLoading || sip.isLoading;
   const isError =
     categories.isError || budgets.isError || txns.isError || ef.isError || sip.isError;
+  const error =
+    categories.error ?? budgets.error ?? txns.error ?? ef.error ?? sip.error ?? null;
 
   const categorySummaries = useMemo(
     () =>
@@ -53,6 +55,7 @@ export function useMonthData(monthKey: MonthKey) {
   return {
     isLoading,
     isError,
+    error,
     refetch: () => {
       void txns.refetch();
       void budgets.refetch();

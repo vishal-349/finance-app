@@ -1,6 +1,15 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryCache } from "@tanstack/react-query";
 
 export const queryClient = new QueryClient({
+  // Log every query failure with full detail (code + message) so Firestore
+  // errors are always visible in the console, even when the UI shows a
+  // friendly message.
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // eslint-disable-next-line no-console
+      console.error("[query] failed:", query.queryKey, error);
+    },
+  }),
   defaultOptions: {
     queries: {
       staleTime: 1000 * 30,

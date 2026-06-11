@@ -32,7 +32,7 @@ export function CategoryHistoryDialog({
   categoryId,
   categoryName,
 }: Props) {
-  const { data, isLoading, isError, refetch } = useCategoryTransactions(
+  const { data, isLoading, isError, error, refetch } = useCategoryTransactions(
     monthKey,
     open ? categoryId : null,
   );
@@ -53,6 +53,7 @@ export function CategoryHistoryDialog({
         <DataState
           isLoading={isLoading}
           isError={isError}
+          error={error}
           onRetry={refetch}
           isEmpty={transactions.length === 0}
           emptyTitle="No transactions"

@@ -30,7 +30,7 @@ const KIND_LABEL: Record<SipKind, string> = {
 };
 
 export function SipPage() {
-  const { entries, isLoading, isError, refetch, remove } = useSip();
+  const { entries, isLoading, isError, error, refetch, remove } = useSip();
   const { money } = useSettings();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<SipInvestment | null>(null);
@@ -84,6 +84,7 @@ export function SipPage() {
       <DataState
         isLoading={isLoading}
         isError={isError}
+        error={error}
         onRetry={refetch}
         isEmpty={entries.length === 0}
         emptyIcon={<LineChart className="h-10 w-10 text-muted-foreground" />}

@@ -1,6 +1,7 @@
 import { AlertCircle, Inbox, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatFirestoreError } from "@/lib/firebaseError";
 
 interface DataStateProps {
   isLoading: boolean;
@@ -47,6 +48,7 @@ export function DataState({
   }
 
   if (isError) {
+    const formatted = formatFirestoreError(error);
     return (
       <div
         className={cn(
@@ -55,11 +57,29 @@ export function DataState({
         )}
       >
         <AlertCircle className="h-10 w-10 text-destructive" />
-        <div>
-          <p className="font-medium">Something went wrong</p>
+        <div className="max-w-md space-y-1">
+          <p className="font-medium">{formatted?.title ?? "Something went wrong"}</p>
           <p className="text-sm text-muted-foreground">
-            {error instanceof Error ? error.message : "Failed to load data."}
+            {formatted?.message ?? "Failed to load data."}
           </p>
+          {formatted?.code && (
+            <p className="text-xs text-muted-foreground/70">code: {formatted.code}</p>
+          )}
+          {formatted?.hint && (
+            <code className="mt-1 inline-block rounded bg-muted px-2 py-1 text-xs">
+              {formatted.hint}
+            </code>
+          )}
+          {formatted?.indexUrl && (
+            <a
+              href={formatted.indexUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 block text-xs text-primary underline underline-offset-2"
+            >
+              Create the index in Firebase console →
+            </a>
+          )}
         </div>
         {onRetry && (
           <Button variant="outline" size="sm" onClick={onRetry}>

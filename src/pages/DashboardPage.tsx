@@ -25,7 +25,8 @@ import type { CategorySummary } from "@/types";
 
 export function DashboardPage() {
   const { monthKey } = useMonth();
-  const { summary, categorySummaries, isLoading, isError, refetch } = useMonthData(monthKey);
+  const { summary, categorySummaries, isLoading, isError, error, refetch } =
+    useMonthData(monthKey);
   const { money } = useSettings();
   const [history, setHistory] = useState<CategorySummary | null>(null);
 
@@ -37,7 +38,7 @@ export function DashboardPage() {
         actions={<MonthPicker />}
       />
 
-      <DataState isLoading={isLoading} isError={isError} onRetry={refetch}>
+      <DataState isLoading={isLoading} isError={isError} error={error} onRetry={refetch}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard label="Income" value={money(summary.income)} icon={TrendingUp} accent="success" />
           <StatCard label="Planned Expenses" value={money(summary.plannedExpenses)} icon={Wallet} />

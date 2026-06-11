@@ -17,7 +17,7 @@ import type { Transaction } from "@/types";
 
 export function TransactionsPage() {
   const { monthKey } = useMonth();
-  const { transactions, isLoading, isError, refetch, remove } = useTransactions(monthKey);
+  const { transactions, isLoading, isError, error, refetch, remove } = useTransactions(monthKey);
   const { money } = useSettings();
   const { filters, setFilters, filtered, isActive, reset } =
     useTransactionFilters(transactions);
@@ -79,6 +79,7 @@ export function TransactionsPage() {
       <DataState
         isLoading={isLoading}
         isError={isError}
+        error={error}
         onRetry={refetch}
         isEmpty={filtered.length === 0}
         emptyIcon={<Receipt className="h-10 w-10 text-muted-foreground" />}

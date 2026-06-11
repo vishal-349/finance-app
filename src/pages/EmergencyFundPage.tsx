@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import type { EmergencyFund } from "@/types";
 
 export function EmergencyFundPage() {
-  const { entries, isLoading, isError, refetch, remove } = useEmergencyFunds();
+  const { entries, isLoading, isError, error, refetch, remove } = useEmergencyFunds();
   const { money } = useSettings();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EmergencyFund | null>(null);
@@ -71,6 +71,7 @@ export function EmergencyFundPage() {
       <DataState
         isLoading={isLoading}
         isError={isError}
+        error={error}
         onRetry={refetch}
         isEmpty={entries.length === 0}
         emptyIcon={<PiggyBank className="h-10 w-10 text-muted-foreground" />}

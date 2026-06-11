@@ -16,7 +16,7 @@ import type { Transaction } from "@/types";
 
 export function IncomePage() {
   const { monthKey } = useMonth();
-  const { transactions, isLoading, isError, refetch, remove } = useTransactions(monthKey);
+  const { transactions, isLoading, isError, error, refetch, remove } = useTransactions(monthKey);
   const incomeMap = useIncomeSourceMap();
   const { money } = useSettings();
   const [formOpen, setFormOpen] = useState(false);
@@ -73,6 +73,7 @@ export function IncomePage() {
       <DataState
         isLoading={isLoading}
         isError={isError}
+        error={error}
         onRetry={refetch}
         isEmpty={income.length === 0}
         emptyIcon={<TrendingUp className="h-10 w-10 text-muted-foreground" />}

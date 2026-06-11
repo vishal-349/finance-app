@@ -18,7 +18,8 @@ import type { CategorySummary } from "@/types";
 export function BudgetsPage() {
   const { monthKey } = useMonth();
   const { setBudget, copyFrom } = useBudgets(monthKey);
-  const { categorySummaries, summary, isLoading, isError, refetch } = useMonthData(monthKey);
+  const { categorySummaries, summary, isLoading, isError, error, refetch } =
+    useMonthData(monthKey);
   const { money } = useSettings();
   const [history, setHistory] = useState<CategorySummary | null>(null);
 
@@ -77,6 +78,7 @@ export function BudgetsPage() {
       <DataState
         isLoading={isLoading}
         isError={isError}
+        error={error}
         onRetry={refetch}
         isEmpty={categorySummaries.length === 0}
         emptyIcon={<Wallet className="h-10 w-10 text-muted-foreground" />}

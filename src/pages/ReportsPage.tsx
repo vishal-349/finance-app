@@ -13,7 +13,8 @@ import { useSettings } from "@/hooks/useSettings";
 export function ReportsPage() {
   const thisYear = new Date().getFullYear();
   const [year, setYear] = useState(thisYear);
-  const { monthly, totals, categoryBreakdown, isLoading, isError, refetch } = useYearData(year);
+  const { monthly, totals, categoryBreakdown, isLoading, isError, error, refetch } =
+    useYearData(year);
   const { money } = useSettings();
 
   const maxCategory = categoryBreakdown[0]?.amount ?? 0;
@@ -43,7 +44,7 @@ export function ReportsPage() {
         }
       />
 
-      <DataState isLoading={isLoading} isError={isError} onRetry={refetch}>
+      <DataState isLoading={isLoading} isError={isError} error={error} onRetry={refetch}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard label="Total Income" value={money(totals.totalIncome)} icon={TrendingUp} accent="success" />
           <StatCard label="Total Expenses" value={money(totals.totalExpenses)} icon={TrendingDown} />
