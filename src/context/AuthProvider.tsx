@@ -5,11 +5,38 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
+import { toast } from "sonner";
 import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 import { ensureUserDoc } from "@/services/settings";
 import { seedDefaultData } from "@/services/seed";
 import { listCategories } from "@/services/categories";
 import { AuthContext } from "./auth-context";
+
+/**
+ * Provision the user's profile + starter data. Runs in the background AFTER the
+ * user is already considered signed in — a Firestore failure here (e.g. security
+ * rules not yet deployed) must never block authentication or bounce the user
+ * back to the login screen.
+ */
+async function provisionUser(firebaseUser: User) {
+  try {
+    await ensureUserDoc(firebaseUser.uid, {
+      displayName: firebaseUser.displayName ?? undefined,
+      email: firebaseUser.email ?? undefined,
+    });
+    const cats = await listCategories(firebaseUser.uid);
+    if (cats.length === 0) await seedDefaultData(firebaseUser.uid);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("User provisioning failed (auth still succeeded):", err);
+    const code = (err as { code?: string })?.code;
+    if (code === "permission-denied") {
+      toast.error(
+        "Signed in, but the database denied access. Deploy your Firestore security rules.",
+      );
+    }
+  }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -22,22 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       return;
     }
-    return onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        await ensureUserDoc(firebaseUser.uid, {
-          displayName: firebaseUser.displayName ?? undefined,
-          email: firebaseUser.email ?? undefined,
-        });
-        // Seed starter data only when the user has no categories yet.
-        try {
-          const cats = await listCategories(firebaseUser.uid);
-          if (cats.length === 0) await seedDefaultData(firebaseUser.uid);
-        } catch {
-          // Non-fatal: user can create categories manually.
-        }
-      }
+    return onAuthStateChanged(auth, (firebaseUser) => {
+      // Establish auth state FIRST and unconditionally. Everything else is a
+      // best-effort side effect that must not gate navigation.
       setUser(firebaseUser);
       setLoading(false);
+      if (firebaseUser) void provisionUser(firebaseUser);
     });
   }, []);
 
