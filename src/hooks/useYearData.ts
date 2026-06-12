@@ -20,6 +20,9 @@ export function useYearData(year: number) {
     const income = new Map<string, number>();
     const expense = new Map<string, number>();
     for (const t of transactions) {
+      // Only income/expense feed the bars — transfers, bill payments and goal
+      // contributions move money between the user's own buckets.
+      if (t.type !== "income" && t.type !== "expense") continue;
       const target = t.type === "income" ? income : expense;
       target.set(t.monthKey, (target.get(t.monthKey) ?? 0) + t.amount);
     }

@@ -48,6 +48,9 @@ export function TransactionFilters({ filters, setFilters, isActive, onReset }: P
             <SelectItem value="all">All types</SelectItem>
             <SelectItem value="expense">Expense</SelectItem>
             <SelectItem value="income">Income</SelectItem>
+            <SelectItem value="transfer">Transfer</SelectItem>
+            <SelectItem value="cc_payment">Bill payment</SelectItem>
+            <SelectItem value="goal">Goal</SelectItem>
           </SelectContent>
         </Select>
 
