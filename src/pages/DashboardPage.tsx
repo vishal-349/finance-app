@@ -15,7 +15,6 @@ import { StatCard } from "@/components/shared/StatCard";
 import { DataState } from "@/components/shared/DataState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SpendDonut } from "@/components/charts/SpendDonut";
-import { DailyPaceBanner } from "@/components/shared/DailyPaceBanner";
 import { PlannedVsActual } from "@/features/dashboard/PlannedVsActual";
 import { ModuleWidgets } from "@/features/dashboard/ModuleWidgets";
 import { CategoryHistoryDialog } from "@/features/transactions/CategoryHistoryDialog";
@@ -66,8 +65,6 @@ export function DashboardPage() {
             accent={summary.budgetUtilization > 1 ? "destructive" : "default"}
           />
         </div>
-
-        <DailyPaceBanner monthKey={monthKey} summaries={categorySummaries} />
 
         <ModuleWidgets monthKey={monthKey} transactions={transactions} />
 

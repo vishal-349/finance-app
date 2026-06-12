@@ -13,7 +13,6 @@ import { useSettings } from "@/hooks/useSettings";
 import { prevMonthKey, formatMonthKeyShort } from "@/lib/date";
 import { BudgetRow } from "@/features/budgets/BudgetRow";
 import { CategoryHistoryDialog } from "@/features/transactions/CategoryHistoryDialog";
-import { DailyPaceBanner } from "@/components/shared/DailyPaceBanner";
 import type { CategorySummary } from "@/types";
 
 export function BudgetsPage() {
@@ -75,8 +74,6 @@ export function BudgetsPage() {
           </CardContent>
         </Card>
       </div>
-
-      <DailyPaceBanner monthKey={monthKey} summaries={categorySummaries} />
 
       <DataState
         isLoading={isLoading}
