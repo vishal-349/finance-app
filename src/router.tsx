@@ -46,6 +46,9 @@ const EmisPage = lazy(() => import("@/pages/EmisPage").then((m) => ({ default: m
 const RecurringPage = lazy(() =>
   import("@/pages/RecurringPage").then((m) => ({ default: m.RecurringPage })),
 );
+const AccountsPage = lazy(() =>
+  import("@/pages/AccountsPage").then((m) => ({ default: m.AccountsPage })),
+);
 
 function FullScreenLoader() {
   return (
@@ -125,6 +128,7 @@ export const router = createBrowserRouter([
       { path: "/transactions", element: page(<TransactionsPage />) },
       { path: "/budgets", element: page(<BudgetsPage />) },
       { path: "/income", element: page(<IncomePage />) },
+      { path: "/accounts", element: page(<AccountsPage />) },
       { path: "/large-expenses", element: page(<LargeExpensesPage />) },
       { path: "/emis", element: page(<EmisPage />) },
       { path: "/recurring", element: page(<RecurringPage />) },

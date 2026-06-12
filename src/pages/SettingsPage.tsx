@@ -5,6 +5,7 @@ import { ManagedListSection } from "@/features/settings/ManagedListSection";
 import { PreferencesSection } from "@/features/settings/PreferencesSection";
 import { AppearanceSection } from "@/features/settings/AppearanceSection";
 import { CreditCardsSection } from "@/features/settings/CreditCardsSection";
+import { AccountsSection } from "@/features/settings/AccountsSection";
 import { DataSection } from "@/features/settings/DataSection";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useIncomeSources } from "@/hooks/useIncomeSources";
@@ -22,6 +23,7 @@ export function SettingsPage() {
       <Tabs defaultValue="categories">
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 sm:w-auto">
           <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="accounts">Accounts</TabsTrigger>
           <TabsTrigger value="payment">Payment Methods</TabsTrigger>
           <TabsTrigger value="cards">Credit Cards</TabsTrigger>
           <TabsTrigger value="income">Income Sources</TabsTrigger>
@@ -32,10 +34,13 @@ export function SettingsPage() {
         <TabsContent value="categories">
           <CategoryManager />
         </TabsContent>
+        <TabsContent value="accounts">
+          <AccountsSection />
+        </TabsContent>
         <TabsContent value="payment">
           <ManagedListSection
             title="Payment Methods"
-            description="Cash, UPI, cards, net banking — fully customizable."
+            description="Optional rails (UPI, NEFT, etc.) tagged on transactions. Your funding source is an Account or Credit Card."
             itemNoun="Payment Method"
             controller={paymentMethods}
           />
