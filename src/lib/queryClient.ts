@@ -34,4 +34,11 @@ export const queryKeys = {
     ["transactions", uid, "category", monthKey, categoryId] as const,
   emergencyFunds: (uid: string) => ["emergencyFunds", uid] as const,
   sip: (uid: string) => ["sip", uid] as const,
+  creditCards: (uid: string) => ["creditCards", uid] as const,
+  cardCycleTxns: (uid: string, cardId: string, start: string, end: string) =>
+    ["transactions", uid, "card", cardId, start, end] as const,
+  emis: (uid: string) => ["emis", uid] as const,
+  emiTxns: (uid: string, emiId: string) =>
+    ["transactions", uid, "emi", emiId] as const,
+  recurringRules: (uid: string) => ["recurringRules", uid] as const,
 };

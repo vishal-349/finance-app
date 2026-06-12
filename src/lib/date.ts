@@ -4,6 +4,7 @@ import {
   startOfMonth,
   endOfMonth,
   addMonths,
+  addDays,
   subMonths,
   parseISO,
 } from "date-fns";
@@ -80,4 +81,75 @@ export function daysLeftInMonth(key: MonthKey): number | null {
   if (!isCurrentMonth(key)) return null;
   const today = new Date();
   return endOfMonth(today).getDate() - today.getDate() + 1;
+}
+
+/* ---- Schedule math (recurring engine, EMIs, card cycles) ---- */
+
+/**
+ * The k-th occurrence of a schedule anchored at `startISO`.
+ * Month-based frequencies always step from the ORIGINAL start so the intended
+ * day-of-month is preserved (Jan 31 → Feb 28 → Mar 31), courtesy of date-fns
+ * clamping in `addMonths`.
+ */
+export function occurrenceAt(
+  startISO: string,
+  frequency: "daily" | "weekly" | "monthly" | "quarterly" | "yearly",
+  k: number,
+): string {
+  const start = parseISO(startISO);
+  switch (frequency) {
+    case "daily":
+      return format(addDays(start, k), "yyyy-MM-dd");
+    case "weekly":
+      return format(addDays(start, k * 7), "yyyy-MM-dd");
+    case "monthly":
+      return format(addMonths(start, k), "yyyy-MM-dd");
+    case "quarterly":
+      return format(addMonths(start, k * 3), "yyyy-MM-dd");
+    case "yearly":
+      return format(addMonths(start, k * 12), "yyyy-MM-dd");
+  }
+}
+
+/** Today as `YYYY-MM-DD` — alias used by schedule code for clarity. */
+export const todayISODate = (): string => format(new Date(), "yyyy-MM-dd");
+
+/**
+ * A credit card's current statement cycle as of `todayISO`.
+ * The cycle runs from the day AFTER the previous statement date through the
+ * next statement date (billing days are clamped into short months).
+ */
+export function currentCardCycle(
+  billingDay: number,
+  todayISO: string,
+): { start: string; end: string } {
+  const today = parseISO(todayISO);
+  const clamp = (d: Date) =>
+    Math.min(Math.max(1, billingDay), endOfMonth(d).getDate());
+  const thisMonthStatement = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    clamp(today),
+  );
+  // If today is past this month's statement date, the cycle started after it;
+  // otherwise the cycle started after LAST month's statement date.
+  const prevStatement =
+    today.getDate() > thisMonthStatement.getDate()
+      ? thisMonthStatement
+      : (() => {
+          const lastMonth = subMonths(today, 1);
+          return new Date(
+            lastMonth.getFullYear(),
+            lastMonth.getMonth(),
+            clamp(lastMonth),
+          );
+        })();
+  const nextStatement = (() => {
+    const base = addMonths(prevStatement, 1);
+    return new Date(base.getFullYear(), base.getMonth(), clamp(base));
+  })();
+  return {
+    start: format(addDays(prevStatement, 1), "yyyy-MM-dd"),
+    end: format(nextStatement, "yyyy-MM-dd"),
+  };
 }

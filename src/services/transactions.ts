@@ -73,6 +73,21 @@ export function createTransaction(
   } as TransactionInput & { monthKey: MonthKey });
 }
 
+/**
+ * Optional reference/text fields that an edit can CLEAR. Passing one of these
+ * explicitly as `undefined` in the patch deletes it from the document —
+ * Firestore's updateDoc merges, so simply omitting a field would silently keep
+ * the stale value (e.g. a creditCardId after switching the payment method).
+ */
+const CLEARABLE_FIELDS = [
+  "categoryId",
+  "incomeSourceId",
+  "paymentMethodId",
+  "creditCardId",
+  "merchant",
+  "note",
+] as const;
+
 export function updateTransaction(
   uid: string,
   id: string,
@@ -80,6 +95,9 @@ export function updateTransaction(
 ): Promise<void> {
   const next: Record<string, unknown> = stripUndefined(patch);
   if (patch.date) next.monthKey = monthKeyFromISODate(patch.date);
+  for (const key of CLEARABLE_FIELDS) {
+    if (key in patch && patch[key] === undefined) next[key] = deleteField();
+  }
   // When the type is known, delete the opposite reference so a document never
   // ends up with BOTH categoryId and incomeSourceId (e.g. after switching an
   // expense to income while editing).

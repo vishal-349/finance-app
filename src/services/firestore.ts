@@ -86,4 +86,7 @@ export const COLLECTIONS = {
   transactions: "transactions",
   emergencyFunds: "emergencyFunds",
   sipInvestments: "sipInvestments",
+  creditCards: "creditCards",
+  emis: "emis",
+  recurringRules: "recurringRules",
 } as const;

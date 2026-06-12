@@ -9,6 +9,11 @@ export const DEFAULT_SETTINGS: UserSettings = {
   locale: "en-IN",
   theme: "system",
   financialYearStartMonth: 4, // April (India)
+  largeExpenseThreshold: 4000,
+  accentColor: "green",
+  density: "comfortable",
+  defaultLandingPage: "/",
+  dashboardLayout: "full",
 };
 
 export async function getUserSettings(uid: string): Promise<UserSettings> {

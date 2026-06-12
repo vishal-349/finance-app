@@ -2,13 +2,18 @@ import type {
   Budget,
   Category,
   CategorySummary,
+  CreditCard,
+  CardCycleStats,
   EmergencyFund,
+  Emi,
+  EmiProgress,
+  EmiSplit,
   MonthKey,
   MonthSummary,
   SipInvestment,
   Transaction,
 } from "@/types";
-import { daysLeftInMonth } from "@/lib/date";
+import { daysLeftInMonth, occurrenceAt, currentCardCycle } from "@/lib/date";
 
 /**
  * All derivation logic lives here. These pure functions turn raw records
@@ -164,4 +169,127 @@ export function sipActualForMonth(
   return sips
     .filter((s) => s.monthKey === monthKey)
     .reduce((acc, s) => acc + s.actual, 0);
+}
+
+/* ---- Large expenses (read-time classification — never stored) ---- */
+
+export const isLargeExpense = (t: Transaction, threshold: number): boolean =>
+  t.type === "expense" && threshold > 0 && t.amount >= threshold;
+
+export function filterLargeExpenses(
+  transactions: Transaction[],
+  threshold: number,
+): Transaction[] {
+  return transactions.filter((t) => isLargeExpense(t, threshold));
+}
+
+export function largeExpenseSummary(
+  transactions: Transaction[],
+  threshold: number,
+): { count: number; total: number } {
+  const large = filterLargeExpenses(transactions, threshold);
+  return { count: large.length, total: large.reduce((a, t) => a + t.amount, 0) };
+}
+
+/* ---- EMI derivations ---- */
+
+export const isEmiTransaction = (t: Transaction): boolean => !!t.emiId;
+
+/** Split expenses into EMI vs non-EMI portions. */
+export function splitEmiExpenses(transactions: Transaction[]): EmiSplit {
+  let emiTotal = 0;
+  let nonEmiTotal = 0;
+  for (const t of transactions) {
+    if (t.type !== "expense") continue;
+    if (isEmiTransaction(t)) emiTotal += t.amount;
+    else nonEmiTotal += t.amount;
+  }
+  const total = emiTotal + nonEmiTotal;
+  return { emiTotal, nonEmiTotal, total, emiShare: total > 0 ? emiTotal / total : 0 };
+}
+
+/** Progress of one EMI plan as of `todayISO` — purely date-derived. */
+export function emiProgress(emi: Emi, todayISO: string): EmiProgress {
+  const totalAmount = emi.monthlyAmount * emi.months;
+  let paidInstallments = 0;
+  let nextPaymentDate: string | null = null;
+  for (let k = 0; k < emi.months; k++) {
+    const occ = occurrenceAt(emi.startDate, "monthly", k);
+    if (occ <= todayISO) paidInstallments += 1;
+    else {
+      nextPaymentDate = occ;
+      break;
+    }
+  }
+  const isCompleted = emi.status !== "stopped" && paidInstallments >= emi.months;
+  if (emi.status === "stopped" || isCompleted) nextPaymentDate = null;
+  const remainingInstallments = Math.max(0, emi.months - paidInstallments);
+  return {
+    emi,
+    paidInstallments,
+    remainingInstallments,
+    paidAmount: paidInstallments * emi.monthlyAmount,
+    remainingAmount: remainingInstallments * emi.monthlyAmount,
+    totalAmount,
+    nextPaymentDate,
+    isCompleted,
+  };
+}
+
+/** Does this EMI have an installment falling inside the given month? */
+export function emiActiveInMonth(emi: Emi, monthKey: MonthKey): boolean {
+  for (let k = 0; k < emi.months; k++) {
+    const occ = occurrenceAt(emi.startDate, "monthly", k);
+    const m = occ.slice(0, 7);
+    if (m === monthKey) return true;
+    if (m > monthKey) return false;
+  }
+  return false;
+}
+
+/** Total EMI outgo scheduled for a month across active (non-stopped) plans. */
+export function emiMonthlyBurden(emis: Emi[], monthKey: MonthKey): number {
+  return emis
+    .filter((e) => e.status !== "stopped" && emiActiveInMonth(e, monthKey))
+    .reduce((a, e) => a + e.monthlyAmount, 0);
+}
+
+/* ---- Credit card derivations ---- */
+
+/**
+ * Current statement-cycle stats for one card from a pool of transactions
+ * (the pool must cover the cycle window — the hook supplies it).
+ */
+export function cardCycleStats(
+  card: CreditCard,
+  cycleTransactions: Transaction[],
+  monthKey: MonthKey,
+  todayISO: string,
+): CardCycleStats {
+  const { start, end } = currentCardCycle(card.billingDay, todayISO);
+  const inCycle = cycleTransactions.filter(
+    (t) =>
+      t.type === "expense" &&
+      t.creditCardId === card.id &&
+      t.date >= start &&
+      t.date <= end,
+  );
+  const cycleSpend = inCycle.reduce((a, t) => a + t.amount, 0);
+  const monthSpend = cycleTransactions
+    .filter(
+      (t) =>
+        t.type === "expense" &&
+        t.creditCardId === card.id &&
+        t.monthKey === monthKey,
+    )
+    .reduce((a, t) => a + t.amount, 0);
+  return {
+    card,
+    cycleStart: start,
+    cycleEnd: end,
+    cycleSpend,
+    monthSpend,
+    utilization: card.creditLimit > 0 ? cycleSpend / card.creditLimit : 0,
+    transactionCount: inCycle.length,
+  };
 }
