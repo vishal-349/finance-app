@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Card,
@@ -6,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -25,6 +27,11 @@ const MONTHS = [
 
 export function PreferencesSection() {
   const { settings, update } = useSettings();
+  const [threshold, setThreshold] = useState(String(settings.largeExpenseThreshold));
+
+  useEffect(() => {
+    setThreshold(String(settings.largeExpenseThreshold));
+  }, [settings.largeExpenseThreshold]);
 
   const save = async (patch: Parameters<typeof update>[0], label: string) => {
     try {
@@ -32,6 +39,18 @@ export function PreferencesSection() {
       toast.success(`${label} updated`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
+    }
+  };
+
+  const commitThreshold = () => {
+    const value = Number(threshold);
+    if (!Number.isFinite(value) || value < 0) {
+      toast.error("Enter a valid threshold amount");
+      setThreshold(String(settings.largeExpenseThreshold));
+      return;
+    }
+    if (value !== settings.largeExpenseThreshold) {
+      void save({ largeExpenseThreshold: value }, "Large expense threshold");
     }
   };
 
@@ -79,6 +98,23 @@ export function PreferencesSection() {
               <SelectItem value="system">System</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="large-threshold">Large expense threshold</Label>
+          <Input
+            id="large-threshold"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            value={threshold}
+            onChange={(e) => setThreshold(e.target.value)}
+            onBlur={commitThreshold}
+            onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          />
+          <p className="text-xs text-muted-foreground">
+            Expenses at or above this amount count as large expenses.
+          </p>
         </div>
 
         <div className="space-y-1.5">

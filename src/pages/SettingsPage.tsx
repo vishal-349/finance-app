@@ -3,6 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryManager } from "@/features/categories/CategoryManager";
 import { ManagedListSection } from "@/features/settings/ManagedListSection";
 import { PreferencesSection } from "@/features/settings/PreferencesSection";
+import { AppearanceSection } from "@/features/settings/AppearanceSection";
+import { CreditCardsSection } from "@/features/settings/CreditCardsSection";
 import { DataSection } from "@/features/settings/DataSection";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useIncomeSources } from "@/hooks/useIncomeSources";
@@ -18,10 +20,12 @@ export function SettingsPage() {
         description="Manage categories, payment methods, income sources and preferences."
       />
       <Tabs defaultValue="categories">
-        <TabsList className="flex w-full flex-wrap justify-start gap-1 sm:w-auto">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 sm:w-auto">
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="payment">Payment Methods</TabsTrigger>
+          <TabsTrigger value="cards">Credit Cards</TabsTrigger>
           <TabsTrigger value="income">Income Sources</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
 
@@ -36,6 +40,9 @@ export function SettingsPage() {
             controller={paymentMethods}
           />
         </TabsContent>
+        <TabsContent value="cards">
+          <CreditCardsSection />
+        </TabsContent>
         <TabsContent value="income">
           <ManagedListSection
             title="Income Sources"
@@ -43,6 +50,9 @@ export function SettingsPage() {
             itemNoun="Income Source"
             controller={incomeSources}
           />
+        </TabsContent>
+        <TabsContent value="appearance">
+          <AppearanceSection />
         </TabsContent>
         <TabsContent value="preferences" className="space-y-6">
           <PreferencesSection />

@@ -1,0 +1,177 @@
+import { Link } from "react-router-dom";
+import { ArrowRight, CalendarClock, CreditCard as CreditCardIcon, Flame, Landmark } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UtilizationBar } from "@/components/shared/UtilizationBar";
+import { useSettings } from "@/hooks/useSettings";
+import { useEmis } from "@/hooks/useEmis";
+import { useCardStats } from "@/hooks/useCreditCards";
+import {
+  emiMonthlyBurden,
+  largeExpenseSummary,
+  splitEmiExpenses,
+} from "@/lib/derive";
+import { formatDisplayDate } from "@/lib/date";
+import { formatPercent } from "@/lib/format";
+import type { MonthKey, Transaction } from "@/types";
+
+/**
+ * Dashboard module widgets: Large Expenses, EMI burden + upcoming payments,
+ * Credit-card spend/utilization, and the EMI vs non-EMI split. All values are
+ * derived live from raw records.
+ */
+export function ModuleWidgets({
+  monthKey,
+  transactions,
+}: {
+  monthKey: MonthKey;
+  transactions: Transaction[];
+}) {
+  const { settings, money } = useSettings();
+  const { all: emis, activeEmis } = useEmis();
+  const { stats: cardStats } = useCardStats();
+
+  const large = largeExpenseSummary(transactions, settings.largeExpenseThreshold);
+  const emiBurden = emiMonthlyBurden(emis, monthKey);
+  const upcoming = activeEmis
+    .filter((p) => p.nextPaymentDate)
+    .sort((a, b) => (a.nextPaymentDate! < b.nextPaymentDate! ? -1 : 1))
+    .slice(0, 3);
+  const totalCardSpend = cardStats.reduce((a, s) => a + s.monthSpend, 0);
+  const split = splitEmiExpenses(transactions);
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Large expenses this month */}
+      <WidgetCard
+        title="Large Expenses"
+        icon={<Flame className="h-4 w-4" />}
+        to="/large-expenses"
+      >
+        <p className="text-xl font-bold tabular-nums">{money(large.total)}</p>
+        <p className="text-xs text-muted-foreground">
+          {large.count} this month · over {money(settings.largeExpenseThreshold)}
+        </p>
+      </WidgetCard>
+
+      {/* EMI burden + upcoming */}
+      <WidgetCard title="EMI Burden" icon={<Landmark className="h-4 w-4" />} to="/emis">
+        <p className="text-xl font-bold tabular-nums">{money(emiBurden)}</p>
+        <p className="text-xs text-muted-foreground">
+          {activeEmis.length} active {activeEmis.length === 1 ? "EMI" : "EMIs"} this month
+        </p>
+        {upcoming.length > 0 && (
+          <ul className="mt-2 space-y-1 border-t pt-2">
+            {upcoming.map((p) => (
+              <li
+                key={p.emi.id}
+                className="flex items-center justify-between gap-2 text-xs"
+              >
+                <span className="flex min-w-0 items-center gap-1 text-muted-foreground">
+                  <CalendarClock className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{p.emi.name}</span>
+                </span>
+                <span className="shrink-0 tabular-nums">
+                  {formatDisplayDate(p.nextPaymentDate!)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </WidgetCard>
+
+      {/* Card spend + utilization */}
+      <WidgetCard
+        title="Card Spend"
+        icon={<CreditCardIcon className="h-4 w-4" />}
+        to="/settings"
+      >
+        <p className="text-xl font-bold tabular-nums">{money(totalCardSpend)}</p>
+        <p className="text-xs text-muted-foreground">
+          {cardStats.length === 0
+            ? "No cards yet — add one in Settings"
+            : "this month across cards"}
+        </p>
+        {cardStats.slice(0, 3).map((s) => (
+          <div key={s.card.id} className="mt-2 space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="truncate text-muted-foreground">
+                {s.card.name} ·· {s.card.last4}
+              </span>
+              <span className="tabular-nums">{formatPercent(s.utilization)}</span>
+            </div>
+            <UtilizationBar
+              utilization={s.utilization}
+              status={s.utilization > 0.9 ? "over" : s.utilization >= 0.3 ? "warning" : "safe"}
+            />
+          </div>
+        ))}
+      </WidgetCard>
+
+      {/* EMI vs non-EMI split */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            EMI vs Non-EMI
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {split.total === 0 ? (
+            <p className="py-6 text-center text-xs text-muted-foreground">
+              No expenses yet this month.
+            </p>
+          ) : (
+            <>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">
+                  EMI {formatPercent(split.emiShare)}
+                </span>
+                <span className="tabular-nums">{money(split.emiTotal)}</span>
+              </div>
+              <div className="mt-1 flex justify-between text-xs">
+                <span className="text-muted-foreground">
+                  Non-EMI {formatPercent(1 - split.emiShare)}
+                </span>
+                <span className="tabular-nums">{money(split.nonEmiTotal)}</span>
+              </div>
+              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full bg-[#6366f1]"
+                  style={{ width: `${Math.min(100, split.emiShare * 100)}%` }}
+                />
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function WidgetCard({
+  title,
+  icon,
+  to,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  to: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="transition-colors hover:border-primary/40">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
+          <span className="flex items-center gap-2">
+            {icon}
+            {title}
+          </span>
+          <Link to={to} aria-label={`Open ${title}`} className="text-muted-foreground hover:text-foreground">
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">{children}</CardContent>
+    </Card>
+  );
+}

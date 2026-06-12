@@ -57,6 +57,41 @@
   }
 }
 
+/* ---- Accent personalization (html[data-accent]) ----
+   Green is the default defined above; the others override --primary/--ring
+   for both light and dark modes. */
+@layer base {
+  html[data-accent="blue"] {
+    --primary: 217 91% 45%;
+    --ring: 217 91% 45%;
+  }
+  html.dark[data-accent="blue"] {
+    --primary: 217 91% 60%;
+    --ring: 217 91% 60%;
+  }
+  html[data-accent="purple"] {
+    --primary: 262 83% 50%;
+    --ring: 262 83% 50%;
+  }
+  html.dark[data-accent="purple"] {
+    --primary: 262 80% 64%;
+    --ring: 262 80% 64%;
+  }
+  html[data-accent="orange"] {
+    --primary: 25 95% 45%;
+    --ring: 25 95% 45%;
+  }
+  html.dark[data-accent="orange"] {
+    --primary: 25 95% 55%;
+    --ring: 25 95% 55%;
+  }
+
+  /* ---- Density: compact shrinks the rem base, scaling all spacing/type. */
+  html[data-density="compact"] {
+    font-size: 14px;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

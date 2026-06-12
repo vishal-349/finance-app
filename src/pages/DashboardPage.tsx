@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SpendDonut } from "@/components/charts/SpendDonut";
 import { DailyPaceBanner } from "@/components/shared/DailyPaceBanner";
 import { PlannedVsActual } from "@/features/dashboard/PlannedVsActual";
+import { ModuleWidgets } from "@/features/dashboard/ModuleWidgets";
 import { CategoryHistoryDialog } from "@/features/transactions/CategoryHistoryDialog";
 import { useMonth } from "@/hooks/useMonth";
 import { useMonthData } from "@/hooks/useMonthData";
@@ -26,9 +27,9 @@ import type { CategorySummary } from "@/types";
 
 export function DashboardPage() {
   const { monthKey } = useMonth();
-  const { summary, categorySummaries, isLoading, isError, error, refetch } =
+  const { summary, categorySummaries, transactions, isLoading, isError, error, refetch } =
     useMonthData(monthKey);
-  const { money } = useSettings();
+  const { money, settings } = useSettings();
   const [history, setHistory] = useState<CategorySummary | null>(null);
 
   return (
@@ -68,6 +69,9 @@ export function DashboardPage() {
 
         <DailyPaceBanner monthKey={monthKey} summaries={categorySummaries} />
 
+        <ModuleWidgets monthKey={monthKey} transactions={transactions} />
+
+        {settings.dashboardLayout === "full" && (
         <div className="grid gap-6 lg:grid-cols-5">
           <Card className="lg:col-span-2">
             <CardHeader>
@@ -93,6 +97,7 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+        )}
       </DataState>
 
       <CategoryHistoryDialog

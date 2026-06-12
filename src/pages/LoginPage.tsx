@@ -4,8 +4,8 @@ import {
   Loader2,
   AlertTriangle,
   TrendingUp,
-  PiggyBank,
   CalendarClock,
+  Repeat,
   BarChart3,
   ShieldCheck,
 } from "lucide-react";
@@ -13,27 +13,28 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import "./login.css";
 
-const FEATURES = [
+const HIGHLIGHTS = [
   {
     icon: TrendingUp,
-    title: "Totals that update themselves",
-    text: "Add a transaction and every budget, total and report recalculates instantly — no manual tallying.",
+    title: "Automatic totals",
+    text: "Budgets and reports recalculate themselves.",
   },
   {
     icon: CalendarClock,
     title: "Daily spend pacing",
-    text: "See how many days are left in the month and a safe amount to spend per day, per category.",
+    text: "A safe amount to spend, every day.",
   },
   {
-    icon: PiggyBank,
-    title: "Emergency fund & SIP",
-    text: "Track monthly saving and investments with running totals and growth charts.",
+    icon: Repeat,
+    title: "EMI & recurring autopilot",
+    text: "Installments and rules post on schedule.",
   },
   {
     icon: BarChart3,
-    title: "Monthly & yearly reports",
-    text: "Filter by month or year and see exactly where your money went.",
+    title: "Annual insights",
+    text: "A whole year of money at a glance.",
   },
 ];
 
@@ -53,102 +54,100 @@ export function LoginPage() {
   };
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Brand / value panel */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-black/10 blur-2xl" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-950 px-4 py-10 text-slate-100">
+      {/* Animated background scene */}
+      <div aria-hidden className="login-blob login-blob--emerald" />
+      <div aria-hidden className="login-blob login-blob--indigo" />
+      <div aria-hidden className="login-blob login-blob--teal" />
+      <div aria-hidden className="login-grid" />
 
-        <div className="relative flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-            <Wallet className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-semibold">FinTrack</span>
-        </div>
-
-        <div className="relative space-y-8">
-          <div className="space-y-3">
-            <h1 className="text-3xl font-bold leading-tight">
-              Your personal finance,
-              <br />
-              on autopilot.
-            </h1>
-            <p className="max-w-md text-sm text-primary-foreground/80">
-              Replace the spreadsheet. Track spending, budgets, savings and
-              investments — with totals derived automatically from your
-              transactions.
-            </p>
-          </div>
-
-          <ul className="space-y-4">
-            {FEATURES.map(({ icon: Icon, title, text }) => (
-              <li key={title} className="flex gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-medium">{title}</p>
-                  <p className="text-sm text-primary-foreground/75">{text}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="relative flex items-center gap-2 text-xs text-primary-foreground/70">
-          <ShieldCheck className="h-4 w-4" />
-          Private by design — your data is isolated to your account.
-        </p>
-      </div>
-
-      {/* Sign-in panel */}
-      <div className="flex items-center justify-center bg-background p-6">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="space-y-2 text-center lg:hidden">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-              <Wallet className="h-7 w-7" />
+      <main className="relative z-10 flex w-full max-w-5xl flex-col items-center gap-10">
+        {/* Glass card */}
+        <section className="w-full max-w-md space-y-7 rounded-2xl border border-white/10 bg-white/[0.06] p-7 shadow-2xl backdrop-blur-2xl duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both sm:p-9">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-emerald-400/30 to-teal-500/15">
+              <Wallet className="h-5 w-5 text-emerald-300" />
             </div>
-            <h1 className="text-2xl font-bold">FinTrack</h1>
+            <span className="text-lg font-semibold tracking-tight">
+              FinTrack
+            </span>
           </div>
 
-          <div className="space-y-2 text-center">
-            <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
-            <p className="text-sm text-muted-foreground">
-              Sign in to manage your money. New here? Signing in creates your
-              account automatically.
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
+              Your money,{" "}
+              <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent">
+                on autopilot
+              </span>
+              .
+            </h1>
+            <p className="text-sm text-slate-400">
+              Spending, budgets, EMIs and investments — totals derive
+              themselves from your transactions.
             </p>
           </div>
 
           {!isFirebaseConfigured && (
-            <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-left text-xs">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <div className="flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 p-3 text-left text-xs text-amber-100">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
               <span>
-                Firebase isn't configured yet. Copy <code>.env.example</code> to{" "}
-                <code>.env.local</code> and add your Firebase web app keys, then
-                restart the dev server.
+                Firebase isn't configured yet. Copy <code>.env.example</code>{" "}
+                to <code>.env.local</code> and add your Firebase web app keys,
+                then restart the dev server.
               </span>
             </div>
           )}
 
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={handleSignIn}
-            disabled={busy || !isFirebaseConfigured}
-          >
-            {busy ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <GoogleIcon className="h-4 w-4" />
-            )}
-            Continue with Google
-          </Button>
+          <div className="space-y-3">
+            <Button
+              size="lg"
+              className="w-full bg-white text-slate-900 shadow-lg hover:bg-slate-100"
+              onClick={handleSignIn}
+              disabled={busy || !isFirebaseConfigured}
+            >
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <GoogleIcon className="h-4 w-4" />
+              )}
+              Continue with Google
+            </Button>
+            <p className="text-center text-xs text-slate-500">
+              New here? Signing in creates your account automatically.
+            </p>
+          </div>
+        </section>
 
-          <p className="text-center text-xs text-muted-foreground">
-            By continuing you agree to keep your finances tidy. 🙂
-          </p>
-        </div>
-      </div>
+        {/* Feature highlights */}
+        <ul className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {HIGHLIGHTS.map(({ icon: Icon, title, text }, i) => (
+            <li
+              key={title}
+              className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+              style={{ animationDelay: `${150 + i * 100}ms` }}
+            >
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-gradient-to-br from-emerald-400/20 to-indigo-500/15">
+                <Icon className="h-4 w-4 text-emerald-300" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-slate-100">{title}</p>
+                <p className="text-xs leading-relaxed text-slate-400">
+                  {text}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {/* Trust footer */}
+        <p
+          className="flex items-center gap-2 text-xs text-slate-500 duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+          style={{ animationDelay: "600ms" }}
+        >
+          <ShieldCheck className="h-4 w-4 text-emerald-400/80" />
+          Private by design — your data stays in your account.
+        </p>
+      </main>
     </div>
   );
 }

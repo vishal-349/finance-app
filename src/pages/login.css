@@ -1,0 +1,109 @@
+/*
+ * Login scene background — animated gradient blobs + subtle grid overlay.
+ * All selectors are scoped with a `login-` prefix so nothing leaks into the
+ * rest of the app. Animations are disabled under prefers-reduced-motion.
+ */
+
+.login-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(100px);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.login-blob--emerald {
+  top: -12%;
+  left: -12%;
+  width: 34rem;
+  height: 34rem;
+  background: radial-gradient(
+    circle at center,
+    rgba(16, 185, 129, 0.3),
+    transparent 70%
+  );
+  animation: login-drift-a 22s ease-in-out infinite alternate;
+}
+
+.login-blob--indigo {
+  right: -14%;
+  bottom: -18%;
+  width: 38rem;
+  height: 38rem;
+  background: radial-gradient(
+    circle at center,
+    rgba(99, 102, 241, 0.22),
+    transparent 70%
+  );
+  animation: login-drift-b 28s ease-in-out infinite alternate;
+}
+
+.login-blob--teal {
+  top: 38%;
+  left: 52%;
+  width: 26rem;
+  height: 26rem;
+  background: radial-gradient(
+    circle at center,
+    rgba(20, 184, 166, 0.2),
+    transparent 70%
+  );
+  animation: login-drift-c 18s ease-in-out infinite alternate;
+}
+
+.login-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.035) 0 1px,
+      transparent 1px 48px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.035) 0 1px,
+      transparent 1px 48px
+    );
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    black 25%,
+    transparent 75%
+  );
+  mask-image: radial-gradient(ellipse at center, black 25%, transparent 75%);
+}
+
+@keyframes login-drift-a {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(6rem, 4rem) scale(1.15);
+  }
+}
+
+@keyframes login-drift-b {
+  from {
+    transform: translate(0, 0) scale(1.1);
+  }
+  to {
+    transform: translate(-5rem, -3rem) scale(0.95);
+  }
+}
+
+@keyframes login-drift-c {
+  from {
+    transform: translate(0, 0) scale(0.95);
+  }
+  to {
+    transform: translate(-4rem, 5rem) scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-blob--emerald,
+  .login-blob--indigo,
+  .login-blob--teal {
+    animation: none;
+  }
+}

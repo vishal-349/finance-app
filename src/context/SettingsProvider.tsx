@@ -50,6 +50,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     return () => mql.removeEventListener("change", onChange);
   }, [settings.theme]);
 
+  // Personalization: accent + density are plain data attributes consumed by
+  // CSS variable overrides in index.css.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.accent = settings.accentColor;
+    root.dataset.density = settings.density;
+  }, [settings.accentColor, settings.density]);
+
   const update = useCallback(
     (patch: Partial<UserSettings>) => mutation.mutateAsync(patch),
     [mutation],

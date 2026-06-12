@@ -1,4 +1,4 @@
-import { orderBy, where } from "firebase/firestore";
+import { orderBy, where, deleteField } from "firebase/firestore";
 import type { Emi, EmiType, ScheduleStatus, Transaction } from "@/types";
 import { occurrenceAt, todayISODate } from "@/lib/date";
 import {
@@ -45,6 +45,14 @@ export function createEmi(uid: string, input: EmiInput): Promise<string> {
  * `startDate` and `months` (the form always does) so the stored `endDate`
  * stays consistent.
  */
+/** Optional fields an edit can clear by passing them explicitly as undefined. */
+const CLEARABLE_EMI_FIELDS = [
+  "categoryId",
+  "creditCardId",
+  "paymentMethodId",
+  "note",
+] as const;
+
 export function updateEmi(
   uid: string,
   id: string,
@@ -53,6 +61,9 @@ export function updateEmi(
   const next: Record<string, unknown> = { ...patch };
   if (patch.startDate !== undefined && patch.months !== undefined) {
     next.endDate = emiEndDate(patch.startDate, patch.months);
+  }
+  for (const key of CLEARABLE_EMI_FIELDS) {
+    if (key in patch && patch[key] === undefined) next[key] = deleteField();
   }
   return updateDocById<Emi>(uid, NAME, id, next as Partial<Emi>);
 }

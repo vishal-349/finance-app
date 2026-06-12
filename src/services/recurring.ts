@@ -1,4 +1,4 @@
-import { orderBy } from "firebase/firestore";
+import { orderBy, deleteField } from "firebase/firestore";
 import type { Frequency, RecurringRule, ScheduleStatus, TransactionType } from "@/types";
 import { todayISODate } from "@/lib/date";
 import {
@@ -40,13 +40,32 @@ export function createRecurringRule(
   });
 }
 
+/**
+ * Optional fields an edit can CLEAR: passing them explicitly as `undefined`
+ * deletes them from the document (updateDoc merges, so omission would keep a
+ * stale value).
+ */
+const CLEARABLE_RULE_FIELDS = [
+  "endDate",
+  "categoryId",
+  "incomeSourceId",
+  "paymentMethodId",
+  "creditCardId",
+  "merchant",
+  "note",
+] as const;
+
 /** Editing a rule only affects FUTURE occurrences — past ones are materialised. */
 export function updateRecurringRule(
   uid: string,
   id: string,
   patch: Partial<RecurringRuleInput & { status: ScheduleStatus; lastGeneratedThrough: string }>,
 ): Promise<void> {
-  return updateDocById<RecurringRule>(uid, NAME, id, patch);
+  const next: Record<string, unknown> = { ...patch };
+  for (const key of CLEARABLE_RULE_FIELDS) {
+    if (key in patch && patch[key] === undefined) next[key] = deleteField();
+  }
+  return updateDocById<RecurringRule>(uid, NAME, id, next as Partial<RecurringRule>);
 }
 
 /** Pause: engine skips it. Resume: skip the paused window (no backfill). */
