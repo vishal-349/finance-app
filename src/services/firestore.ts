@@ -89,4 +89,7 @@ export const COLLECTIONS = {
   creditCards: "creditCards",
   emis: "emis",
   recurringRules: "recurringRules",
+  accounts: "accounts",
+  savingsGoals: "savingsGoals",
+  subscriptions: "subscriptions",
 } as const;

@@ -14,8 +14,26 @@ import type { Timestamp } from "firebase/firestore";
 /** `YYYY-MM`, e.g. "2026-06". Primary index for month/year reporting. */
 export type MonthKey = string;
 
-export type TransactionType = "expense" | "income";
+/**
+ * Money-movement type. `expense`/`income` are the originals and the ONLY two
+ * counted toward spending/earning totals. The rest are explicitly excluded from
+ * income/expense everywhere (they move money between the user's own buckets):
+ * - `transfer`    — account → account.
+ * - `cc_payment`  — account → credit card (a bill payment, NOT a new expense).
+ * - `goal`        — account → savings goal (a contribution, NOT an expense).
+ */
+export type TransactionType =
+  | "expense"
+  | "income"
+  | "transfer"
+  | "cc_payment"
+  | "goal";
 export type CategoryType = "expense" | "income";
+/** A funding source that holds cash: a bank account or a physical/virtual wallet. */
+export type AccountType = "bank" | "cash";
+export type SubscriptionFrequency = "monthly" | "yearly";
+export type GoalStatus = "active" | "achieved" | "archived";
+export type SubscriptionStatus = "active" | "paused" | "cancelled";
 export type SipKind = "mutual_fund" | "stock" | "custom";
 export type ThemePreference = "light" | "dark" | "system";
 export type AccentColor = "green" | "blue" | "purple" | "orange";
@@ -65,6 +83,65 @@ export interface PaymentMethod extends BaseDoc {
   kind?: PaymentMethodKind;
 }
 
+/**
+ * A bank account or cash wallet — the primary funding source for transactions.
+ * The current balance is NEVER stored: it's derived as
+ * `openingBalance + income − expense − transfersOut + transfersIn − billPayments − goalContributions`
+ * (see `accountBalance` in `derive.ts`).
+ */
+export interface Account extends BaseDoc {
+  name: string;
+  type: AccountType;
+  /** Starting balance the derived balance builds on. */
+  openingBalance: number;
+  institution?: string;
+  last4?: string;
+  color?: string;
+  order: number;
+  archived: boolean;
+}
+
+/**
+ * A savings goal (Phone, Car, Vacation…). Saved amount is NEVER stored — it's
+ * the sum of `goal` contribution transactions tagged with this goal's id.
+ */
+export interface SavingsGoal extends BaseDoc {
+  name: string;
+  targetAmount: number;
+  /** Optional desired completion date `YYYY-MM-DD`. */
+  targetDate?: string;
+  color?: string;
+  icon?: string;
+  status: GoalStatus;
+  order: number;
+  note?: string;
+}
+
+/**
+ * A subscription (Netflix, Spotify, ChatGPT…). When `autoRenew` is true and
+ * `status` is active, the recurring engine materialises each cycle's charge as
+ * an expense transaction tagged with this subscription's id.
+ */
+export interface Subscription extends BaseDoc {
+  name: string;
+  /** Brand/service tag for analytics, e.g. "Netflix". */
+  service?: string;
+  amount: number;
+  frequency: SubscriptionFrequency;
+  /** First charge date `YYYY-MM-DD`. */
+  startDate: string;
+  /** Funding source — exactly one of these in practice. */
+  accountId?: string;
+  creditCardId?: string;
+  /** Expense category the generated charge is filed under. */
+  categoryId?: string;
+  autoRenew: boolean;
+  status: SubscriptionStatus;
+  note?: string;
+  /** Engine bookkeeping: charges generated up to and including this date. */
+  lastGeneratedThrough?: string;
+}
+
 export interface CreditCard extends BaseDoc {
   name: string; // e.g. card product name
   bankName: string;
@@ -93,6 +170,8 @@ export interface Emi extends BaseDoc {
   /** Category the generated installment expenses are filed under. */
   categoryId?: string;
   creditCardId?: string;
+  /** Bank/cash account the installment is debited from (when not on a card). */
+  accountId?: string;
   paymentMethodId?: string;
   note?: string;
   status: ScheduleStatus;
@@ -113,6 +192,8 @@ export interface RecurringRule extends BaseDoc {
   incomeSourceId?: string;
   paymentMethodId?: string;
   creditCardId?: string;
+  /** Bank/cash account the occurrence is debited from / credited to. */
+  accountId?: string;
   merchant?: string;
   note?: string;
   status: ScheduleStatus;
@@ -143,9 +224,22 @@ export interface Transaction extends BaseDoc {
   /** Expense → categoryId set. Income → incomeSourceId set. */
   categoryId?: string;
   incomeSourceId?: string;
+  /** Optional descriptive "rail" (UPI/NEFT/etc) — superseded by the source below. */
   paymentMethodId?: string;
-  /** Set when paid by credit card. */
+  /**
+   * Funding source. For an `expense`, exactly one of `accountId` | `creditCardId`.
+   * For `income`/`transfer`/`cc_payment`/`goal`, `accountId` is the bank/cash
+   * account money moves OUT of (or, for income, INTO).
+   */
+  accountId?: string;
+  /** Set when paid by credit card (expense source) or the card being paid (cc_payment). */
   creditCardId?: string;
+  /** Destination account for a `transfer`. */
+  toAccountId?: string;
+  /** Destination goal for a `goal` contribution (also the analytics tag). */
+  savingsGoalId?: string;
+  /** Set when materialised from a subscription. */
+  subscriptionId?: string;
   /** Set when this transaction is an EMI installment. EMI-ness is derived from this. */
   emiId?: string;
   /** Set when materialised from a recurring rule. */
@@ -240,6 +334,52 @@ export interface CardCycleStats {
   monthSpend: number;
   utilization: number; // 0..n of creditLimit
   transactionCount: number;
+}
+
+/** Derived balance + flows for one account (never stored). */
+export interface AccountBalance {
+  account: Account;
+  balance: number;
+  /** Money that has entered this account (income + transfers in). */
+  totalIn: number;
+  /** Money that has left (expense + transfers out + bill payments + goal contributions). */
+  totalOut: number;
+  transactionCount: number;
+}
+
+/** Derived progress of one savings goal (never stored). */
+export interface GoalProgress {
+  goal: SavingsGoal;
+  saved: number;
+  remaining: number;
+  /** 0..1 (1 = reached). */
+  progress: number;
+  isAchieved: boolean;
+  /** Avg contribution per month over the contribution window. */
+  monthlyRate: number;
+  /** Projected completion date `YYYY-MM-DD`, or null when not yet forecastable. */
+  forecastDate: string | null;
+  /** When `targetDate` is set: whether the run-rate reaches it in time. */
+  onTrack: boolean | null;
+}
+
+/** Next renewal of one subscription (never stored). */
+export interface SubscriptionRenewal {
+  subscription: Subscription;
+  /** Next charge date `YYYY-MM-DD`, or null when cancelled/ended. */
+  nextRenewal: string | null;
+  /** This subscription's cost normalised to a month (yearly ÷ 12). */
+  monthlyEquivalent: number;
+}
+
+/** Derived subscription analytics across all subscriptions (never stored). */
+export interface SubscriptionAnalytics {
+  /** Monthly recurring spend (monthly subs + yearly ÷ 12). */
+  monthlyTotal: number;
+  /** Annualised spend. */
+  yearlyTotal: number;
+  activeCount: number;
+  renewals: SubscriptionRenewal[];
 }
 
 export interface MonthSummary {

@@ -99,7 +99,7 @@ export function TransactionForm({
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { type: defaultType, date: todayISO() },
+    defaultValues: { type: defaultType as "expense" | "income", date: todayISO() },
   });
 
   const type = watch("type");
@@ -133,7 +133,7 @@ export function TransactionForm({
     setEmiMonthlyTouched(false);
     if (editing) {
       reset({
-        type: editing.type,
+        type: editing.type as "expense" | "income",
         date: editing.date,
         amount: editing.amount,
         categoryId: editing.categoryId,
@@ -144,7 +144,7 @@ export function TransactionForm({
         note: editing.note ?? "",
       });
     } else {
-      reset({ type: defaultType, date: todayISO(), amount: undefined });
+      reset({ type: defaultType as "expense" | "income", date: todayISO(), amount: undefined });
     }
   }, [open, editing, defaultType, reset]);
 
@@ -227,7 +227,7 @@ export function TransactionForm({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Tabs
             value={type}
-            onValueChange={(v) => setValue("type", v as TransactionType)}
+            onValueChange={(v) => setValue("type", v as "expense" | "income")}
           >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="expense">Expense</TabsTrigger>

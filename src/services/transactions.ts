@@ -1,5 +1,5 @@
 import { where, orderBy, deleteField } from "firebase/firestore";
-import type { Transaction, MonthKey } from "@/types";
+import type { Transaction, MonthKey, TransactionType } from "@/types";
 import {
   COLLECTIONS,
   createDoc,
@@ -84,9 +84,26 @@ const CLEARABLE_FIELDS = [
   "incomeSourceId",
   "paymentMethodId",
   "creditCardId",
+  "accountId",
+  "toAccountId",
+  "savingsGoalId",
+  "subscriptionId",
   "merchant",
   "note",
 ] as const;
+
+/**
+ * Reference fields each type must NOT keep, so switching a transaction's type
+ * during an edit never leaves a stale ref (e.g. a categoryId on a transfer).
+ * The fields a type legitimately uses are intentionally absent from its list.
+ */
+const STALE_REFS_BY_TYPE: Record<TransactionType, readonly string[]> = {
+  expense: ["incomeSourceId", "toAccountId", "savingsGoalId"],
+  income: ["categoryId", "creditCardId", "toAccountId", "savingsGoalId"],
+  transfer: ["categoryId", "incomeSourceId", "creditCardId", "savingsGoalId"],
+  cc_payment: ["categoryId", "incomeSourceId", "toAccountId", "savingsGoalId"],
+  goal: ["categoryId", "incomeSourceId", "creditCardId", "toAccountId"],
+};
 
 export function updateTransaction(
   uid: string,
@@ -98,11 +115,12 @@ export function updateTransaction(
   for (const key of CLEARABLE_FIELDS) {
     if (key in patch && patch[key] === undefined) next[key] = deleteField();
   }
-  // When the type is known, delete the opposite reference so a document never
-  // ends up with BOTH categoryId and incomeSourceId (e.g. after switching an
-  // expense to income while editing).
-  if (patch.type === "expense") next.incomeSourceId = deleteField();
-  if (patch.type === "income") next.categoryId = deleteField();
+  // When the type is known, delete references that type must not carry, so a
+  // document never keeps a stale ref after a type switch (e.g. a categoryId
+  // left behind when an expense becomes a transfer).
+  if (patch.type) {
+    for (const key of STALE_REFS_BY_TYPE[patch.type]) next[key] = deleteField();
+  }
   return updateDocById<Transaction>(
     uid,
     NAME,

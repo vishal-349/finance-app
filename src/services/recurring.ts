@@ -22,6 +22,7 @@ export type RecurringRuleInput = {
   incomeSourceId?: string;
   paymentMethodId?: string;
   creditCardId?: string;
+  accountId?: string;
   merchant?: string;
   note?: string;
 };
@@ -51,6 +52,7 @@ const CLEARABLE_RULE_FIELDS = [
   "incomeSourceId",
   "paymentMethodId",
   "creditCardId",
+  "accountId",
   "merchant",
   "note",
 ] as const;

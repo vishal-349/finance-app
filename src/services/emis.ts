@@ -19,6 +19,7 @@ export type EmiInput = {
   months: number;
   categoryId?: string;
   creditCardId?: string;
+  accountId?: string;
   paymentMethodId?: string;
   note?: string;
 };
@@ -49,6 +50,7 @@ export function createEmi(uid: string, input: EmiInput): Promise<string> {
 const CLEARABLE_EMI_FIELDS = [
   "categoryId",
   "creditCardId",
+  "accountId",
   "paymentMethodId",
   "note",
 ] as const;

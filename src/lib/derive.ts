@@ -1,4 +1,6 @@
 import type {
+  Account,
+  AccountBalance,
   Budget,
   Category,
   CategorySummary,
@@ -8,12 +10,23 @@ import type {
   Emi,
   EmiProgress,
   EmiSplit,
+  GoalProgress,
   MonthKey,
   MonthSummary,
+  SavingsGoal,
   SipInvestment,
+  Subscription,
+  SubscriptionAnalytics,
+  SubscriptionRenewal,
   Transaction,
 } from "@/types";
 import { daysLeftInMonth, occurrenceAt, currentCardCycle } from "@/lib/date";
+import {
+  addMonths,
+  differenceInCalendarMonths,
+  format,
+  parseISO,
+} from "date-fns";
 
 /**
  * All derivation logic lives here. These pure functions turn raw records
@@ -254,7 +267,181 @@ export function emiMonthlyBurden(emis: Emi[], monthKey: MonthKey): number {
     .reduce((a, e) => a + e.monthlyAmount, 0);
 }
 
+/* ---- Account balances (derived — never stored) ---- */
+
+/**
+ * Current balance + flows for one account, derived from the FULL transaction
+ * set. Balance = opening + money in − money out, where:
+ *  in  = income credited here + transfers into here
+ *  out = expenses paid from here + transfers out + bill payments + goal contributions
+ * (Card expenses don't touch an account — they raise the card's outstanding.)
+ */
+export function accountBalance(account: Account, txns: Transaction[]): AccountBalance {
+  let totalIn = 0;
+  let totalOut = 0;
+  let transactionCount = 0;
+  for (const t of txns) {
+    if (t.type === "income" && t.accountId === account.id) {
+      totalIn += t.amount;
+      transactionCount++;
+    } else if (t.type === "transfer" && t.toAccountId === account.id) {
+      totalIn += t.amount;
+      transactionCount++;
+    } else if (
+      (t.type === "expense" ||
+        t.type === "transfer" ||
+        t.type === "cc_payment" ||
+        t.type === "goal") &&
+      t.accountId === account.id
+    ) {
+      totalOut += t.amount;
+      transactionCount++;
+    }
+  }
+  return {
+    account,
+    balance: account.openingBalance + totalIn - totalOut,
+    totalIn,
+    totalOut,
+    transactionCount,
+  };
+}
+
+export function accountBalances(accounts: Account[], txns: Transaction[]): AccountBalance[] {
+  return accounts.map((a) => accountBalance(a, txns));
+}
+
+/** Total liquid cash across all (non-archived) accounts. */
+export function totalLiquidBalance(balances: AccountBalance[]): number {
+  return balances.reduce((acc, b) => acc + b.balance, 0);
+}
+
+/* ---- Savings goal derivations (derived — never stored) ---- */
+
+export function goalContributions(txns: Transaction[], goalId: string): Transaction[] {
+  return txns.filter((t) => t.type === "goal" && t.savingsGoalId === goalId);
+}
+
+/**
+ * Progress + run-rate forecast for one goal. The forecast projects the average
+ * monthly contribution forward to estimate a completion date.
+ */
+export function goalProgress(
+  goal: SavingsGoal,
+  txns: Transaction[],
+  todayISO: string,
+): GoalProgress {
+  const contribs = goalContributions(txns, goal.id);
+  const saved = contribs.reduce((a, t) => a + t.amount, 0);
+  const remaining = Math.max(0, goal.targetAmount - saved);
+  const progress =
+    goal.targetAmount > 0 ? Math.min(1, saved / goal.targetAmount) : saved > 0 ? 1 : 0;
+  const isAchieved = goal.targetAmount > 0 && saved >= goal.targetAmount;
+
+  let monthlyRate = 0;
+  let forecastDate: string | null = null;
+  let onTrack: boolean | null = null;
+
+  if (contribs.length > 0) {
+    const firstDate = contribs.reduce(
+      (min, t) => (t.date < min ? t.date : min),
+      contribs[0].date,
+    );
+    const monthsElapsed = Math.max(
+      1,
+      differenceInCalendarMonths(parseISO(todayISO), parseISO(firstDate)) + 1,
+    );
+    monthlyRate = saved / monthsElapsed;
+  }
+
+  if (isAchieved) {
+    onTrack = goal.targetDate ? true : null;
+  } else if (monthlyRate > 0) {
+    const monthsNeeded = Math.ceil(remaining / monthlyRate);
+    forecastDate = format(addMonths(parseISO(todayISO), monthsNeeded), "yyyy-MM-dd");
+    if (goal.targetDate) onTrack = forecastDate <= goal.targetDate;
+  }
+
+  return {
+    goal,
+    saved,
+    remaining,
+    progress,
+    isAchieved,
+    monthlyRate,
+    forecastDate,
+    onTrack,
+  };
+}
+
+/* ---- Subscription derivations (derived — never stored) ---- */
+
+/** This subscription's cost normalised to one month. */
+export function subscriptionMonthlyEquivalent(sub: Subscription): number {
+  return sub.frequency === "yearly" ? sub.amount / 12 : sub.amount;
+}
+
+/** Next charge date on/after today, or null when cancelled. */
+export function nextRenewalDate(sub: Subscription, todayISO: string): string | null {
+  if (sub.status === "cancelled") return null;
+  for (let k = 0; k < 600; k++) {
+    const occ = occurrenceAt(sub.startDate, sub.frequency, k);
+    if (occ >= todayISO) return occ;
+  }
+  return null;
+}
+
+export function subscriptionAnalytics(
+  subs: Subscription[],
+  todayISO: string,
+): SubscriptionAnalytics {
+  const active = subs.filter((s) => s.status === "active");
+  const renewals: SubscriptionRenewal[] = subs
+    .map((subscription) => ({
+      subscription,
+      nextRenewal: nextRenewalDate(subscription, todayISO),
+      monthlyEquivalent: subscriptionMonthlyEquivalent(subscription),
+    }))
+    .sort((a, b) => {
+      if (!a.nextRenewal) return 1;
+      if (!b.nextRenewal) return -1;
+      return a.nextRenewal.localeCompare(b.nextRenewal);
+    });
+  const monthlyTotal = active.reduce(
+    (acc, s) => acc + subscriptionMonthlyEquivalent(s),
+    0,
+  );
+  return {
+    monthlyTotal,
+    yearlyTotal: monthlyTotal * 12,
+    activeCount: active.length,
+    renewals,
+  };
+}
+
 /* ---- Credit card derivations ---- */
+
+/** Bill payments recorded against one card, newest first. */
+export function cardPayments(txns: Transaction[], cardId: string): Transaction[] {
+  return txns
+    .filter((t) => t.type === "cc_payment" && t.creditCardId === cardId)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/**
+ * Outstanding balance on a card = all charges (expenses, incl. EMI installments)
+ * minus all bill payments. Derived from the full transaction set, never stored.
+ */
+export function cardOutstanding(cardId: string, txns: Transaction[]): number {
+  let charges = 0;
+  let payments = 0;
+  for (const t of txns) {
+    if (t.creditCardId !== cardId) continue;
+    if (t.type === "expense") charges += t.amount;
+    else if (t.type === "cc_payment") payments += t.amount;
+  }
+  return charges - payments;
+}
 
 /**
  * Current statement-cycle stats for one card from a pool of transactions
