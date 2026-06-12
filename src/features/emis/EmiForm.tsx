@@ -15,15 +15,19 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { useEmis } from "@/hooks/useEmis";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { useAccounts } from "@/hooks/useAccounts";
 import { useSettings } from "@/hooks/useSettings";
 import { emiEndDate } from "@/services/emis";
+import { decodeSource, encodeSource } from "@/lib/source";
 import { formatDisplayDate, todayISO } from "@/lib/date";
 import type { Emi, EmiType } from "@/types";
 
@@ -51,6 +55,7 @@ export function EmiForm({ open, onOpenChange, editing }: Props) {
   const { create, update } = useEmis();
   const { activeExpense } = useCategories();
   const { active: cards } = useCreditCards();
+  const { active: accounts } = useAccounts();
   const { money } = useSettings();
 
   const [name, setName] = useState("");
@@ -59,7 +64,7 @@ export function EmiForm({ open, onOpenChange, editing }: Props) {
   const [startDate, setStartDate] = useState(todayISO());
   const [months, setMonths] = useState("");
   const [categoryId, setCategoryId] = useState(NONE);
-  const [creditCardId, setCreditCardId] = useState(NONE);
+  const [sourceId, setSourceId] = useState(NONE);
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -70,7 +75,7 @@ export function EmiForm({ open, onOpenChange, editing }: Props) {
     setStartDate(editing?.startDate ?? todayISO());
     setMonths(editing ? String(editing.months) : "");
     setCategoryId(editing?.categoryId ?? NONE);
-    setCreditCardId(editing?.creditCardId ?? NONE);
+    setSourceId(encodeSource(editing?.accountId, editing?.creditCardId) || NONE);
     setNote(editing?.note ?? "");
   }, [open, editing]);
 
@@ -97,6 +102,7 @@ export function EmiForm({ open, onOpenChange, editing }: Props) {
     }
     // NOTE: startDate + months are ALWAYS included so the stored endDate stays
     // consistent when editing (updateEmi recomputes it from this pair).
+    const { accountId, creditCardId } = decodeSource(sourceId === NONE ? "" : sourceId);
     const payload = {
       name: name.trim(),
       emiType,
@@ -104,7 +110,8 @@ export function EmiForm({ open, onOpenChange, editing }: Props) {
       startDate,
       months: monthsNum,
       categoryId: categoryId === NONE ? undefined : categoryId,
-      creditCardId: creditCardId === NONE ? undefined : creditCardId,
+      accountId,
+      creditCardId,
       note: note.trim() || undefined,
     };
     try {
@@ -215,18 +222,33 @@ export function EmiForm({ open, onOpenChange, editing }: Props) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Linked credit card</Label>
-              <Select value={creditCardId} onValueChange={setCreditCardId}>
+              <Label>Funding source</Label>
+              <Select value={sourceId} onValueChange={setSourceId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>None</SelectItem>
-                  {cards.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name} ·· {c.last4}
-                    </SelectItem>
-                  ))}
+                  {accounts.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>Accounts</SelectLabel>
+                      {accounts.map((a) => (
+                        <SelectItem key={a.id} value={`acct:${a.id}`}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {cards.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>Credit cards</SelectLabel>
+                      {cards.map((c) => (
+                        <SelectItem key={c.id} value={`card:${c.id}`}>
+                          {c.name} ·· {c.last4}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
                 </SelectContent>
               </Select>
             </div>

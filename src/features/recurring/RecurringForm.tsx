@@ -15,7 +15,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -23,9 +25,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRecurringRules } from "@/hooks/useRecurring";
 import { useCategories } from "@/hooks/useCategories";
 import { useIncomeSources } from "@/hooks/useIncomeSources";
-import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { useAccounts } from "@/hooks/useAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
-import { isCreditCardMethod } from "@/services/creditCards";
+import { decodeSource, encodeSource } from "@/lib/source";
 import { todayISO } from "@/lib/date";
 import type { Frequency, RecurringRule, TransactionType } from "@/types";
 
@@ -36,9 +38,6 @@ const FREQUENCIES: { value: Frequency; label: string }[] = [
   { value: "quarterly", label: "Quarterly" },
   { value: "yearly", label: "Yearly" },
 ];
-
-/** Sentinel for "no payment method" — shadcn Select items can't be empty strings. */
-const NONE = "none";
 
 interface RecurringFormProps {
   open: boolean;
@@ -51,7 +50,7 @@ export function RecurringForm({ open, onOpenChange, editing }: RecurringFormProp
   const { create, update } = useRecurringRules();
   const { activeExpense } = useCategories();
   const { active: incomeSources } = useIncomeSources();
-  const { active: paymentMethods } = usePaymentMethods();
+  const { active: accounts } = useAccounts();
   const { active: creditCards } = useCreditCards();
 
   const [type, setType] = useState<TransactionType>("expense");
@@ -62,8 +61,7 @@ export function RecurringForm({ open, onOpenChange, editing }: RecurringFormProp
   const [endDate, setEndDate] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [incomeSourceId, setIncomeSourceId] = useState("");
-  const [paymentMethodId, setPaymentMethodId] = useState("");
-  const [creditCardId, setCreditCardId] = useState("");
+  const [sourceId, setSourceId] = useState("");
   const [merchant, setMerchant] = useState("");
   const [note, setNote] = useState("");
 
@@ -77,14 +75,13 @@ export function RecurringForm({ open, onOpenChange, editing }: RecurringFormProp
     setEndDate(editing?.endDate ?? "");
     setCategoryId(editing?.categoryId ?? "");
     setIncomeSourceId(editing?.incomeSourceId ?? "");
-    setPaymentMethodId(editing?.paymentMethodId ?? "");
-    setCreditCardId(editing?.creditCardId ?? "");
+    setSourceId(encodeSource(editing?.accountId, editing?.creditCardId));
     setMerchant(editing?.merchant ?? "");
     setNote(editing?.note ?? "");
   }, [open, editing]);
 
-  const selectedMethod = paymentMethods.find((p) => p.id === paymentMethodId);
-  const showCardSelect = !!selectedMethod && isCreditCardMethod(selectedMethod);
+  // Income only lands in an account; cards can't receive income.
+  const cardAllowed = type === "expense";
 
   const submit = async () => {
     if (!name.trim()) {
@@ -112,6 +109,11 @@ export function RecurringForm({ open, onOpenChange, editing }: RecurringFormProp
       toast.error("Choose an income source");
       return;
     }
+    const { accountId, creditCardId } = decodeSource(sourceId);
+    if (!accountId && !creditCardId) {
+      toast.error("Choose a funding source");
+      return;
+    }
 
     // All fields, with undefined for cleared optionals — updates must clear them.
     const payload = {
@@ -123,8 +125,8 @@ export function RecurringForm({ open, onOpenChange, editing }: RecurringFormProp
       endDate: endDate || undefined,
       categoryId: type === "expense" ? categoryId : undefined,
       incomeSourceId: type === "income" ? incomeSourceId : undefined,
-      paymentMethodId: paymentMethodId || undefined,
-      creditCardId: showCardSelect && creditCardId ? creditCardId : undefined,
+      accountId,
+      creditCardId: cardAllowed ? creditCardId : undefined,
       merchant: merchant.trim() || undefined,
       note: note.trim() || undefined,
     };
@@ -263,21 +265,32 @@ export function RecurringForm({ open, onOpenChange, editing }: RecurringFormProp
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Payment method</Label>
-              <Select
-                value={paymentMethodId || NONE}
-                onValueChange={(v) => setPaymentMethodId(v === NONE ? "" : v)}
-              >
+              <Label>{type === "income" ? "Deposit to" : "Source"}</Label>
+              <Select value={sourceId} onValueChange={setSourceId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Optional" />
+                  <SelectValue placeholder="Account or card" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>None</SelectItem>
-                  {paymentMethods.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
+                  {accounts.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>Accounts</SelectLabel>
+                      {accounts.map((a) => (
+                        <SelectItem key={a.id} value={`acct:${a.id}`}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {cardAllowed && creditCards.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>Credit cards</SelectLabel>
+                      {creditCards.map((c) => (
+                        <SelectItem key={c.id} value={`card:${c.id}`}>
+                          {c.name} ·· {c.last4}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -291,24 +304,6 @@ export function RecurringForm({ open, onOpenChange, editing }: RecurringFormProp
               />
             </div>
           </div>
-
-          {showCardSelect && (
-            <div className="space-y-1.5">
-              <Label>Credit card</Label>
-              <Select value={creditCardId} onValueChange={setCreditCardId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select card" />
-                </SelectTrigger>
-                <SelectContent>
-                  {creditCards.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name} ·· {c.last4}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="rec-note">Note</Label>

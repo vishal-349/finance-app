@@ -26,6 +26,7 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useCategories } from "@/hooks/useCategories";
+import { decodeSource, encodeSource } from "@/lib/source";
 import { todayISO } from "@/lib/date";
 import type { Subscription, SubscriptionFrequency } from "@/types";
 
@@ -56,13 +57,7 @@ export function SubscriptionForm({ open, onOpenChange, editing }: Props) {
     setAmount(editing ? String(editing.amount) : "");
     setFrequency(editing?.frequency ?? "monthly");
     setStartDate(editing?.startDate ?? todayISO());
-    setSourceId(
-      editing?.creditCardId
-        ? `card:${editing.creditCardId}`
-        : editing?.accountId
-          ? `acct:${editing.accountId}`
-          : "",
-    );
+    setSourceId(encodeSource(editing?.accountId, editing?.creditCardId));
     setCategoryId(editing?.categoryId ?? "");
     setAutoRenew(editing ? editing.autoRenew : true);
     setNote(editing?.note ?? "");
@@ -78,8 +73,11 @@ export function SubscriptionForm({ open, onOpenChange, editing }: Props) {
       toast.error("Enter an amount greater than 0");
       return;
     }
-    const accountId = sourceId.startsWith("acct:") ? sourceId.slice(5) : undefined;
-    const creditCardId = sourceId.startsWith("card:") ? sourceId.slice(5) : undefined;
+    const { accountId, creditCardId } = decodeSource(sourceId);
+    if (!accountId && !creditCardId) {
+      toast.error("Choose a funding source");
+      return;
+    }
 
     const payload = {
       name: name.trim(),

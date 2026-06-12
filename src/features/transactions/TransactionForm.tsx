@@ -34,6 +34,7 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { useEmis } from "@/hooks/useEmis";
 import { useMonth } from "@/hooks/useMonth";
 import { useSettings } from "@/hooks/useSettings";
+import { decodeSource, encodeSource, isCardSource } from "@/lib/source";
 import { todayISO } from "@/lib/date";
 import type { Transaction, TransactionType } from "@/types";
 
@@ -127,7 +128,7 @@ export function TransactionForm({
   const sourceId = watch("sourceId");
 
   /** Is the selected source a credit card (only meaningful for expenses)? */
-  const cardSelected = type === "expense" && (sourceId?.startsWith("card:") ?? false);
+  const cardSelected = type === "expense" && isCardSource(sourceId);
 
   // EMI conversion is only offered when CREATING a card expense.
   const emiOffered = cardSelected && !editing;
@@ -155,11 +156,7 @@ export function TransactionForm({
         amount: editing.amount,
         categoryId: editing.categoryId,
         incomeSourceId: editing.incomeSourceId,
-        sourceId: editing.creditCardId
-          ? `card:${editing.creditCardId}`
-          : editing.accountId
-            ? `acct:${editing.accountId}`
-            : undefined,
+        sourceId: encodeSource(editing.accountId, editing.creditCardId),
         toAccountId: editing.toAccountId,
         paymentMethodId: editing.paymentMethodId,
         merchant: editing.merchant ?? "",
@@ -171,15 +168,18 @@ export function TransactionForm({
   }, [open, editing, defaultType, reset]);
 
   const onSubmit = async (values: FormValues) => {
-    const accountId = values.sourceId?.startsWith("acct:")
-      ? values.sourceId.slice(5)
-      : undefined;
-    const creditCardId = values.sourceId?.startsWith("card:")
-      ? values.sourceId.slice(5)
-      : undefined;
+    const { accountId, creditCardId } = decodeSource(values.sourceId);
 
-    // A funding source is required for new transactions (feature 14).
-    if (!editing && values.type !== "transfer" && !accountId && !creditCardId) {
+    // A funding source is required for new transactions, and an existing one
+    // must not be cleared on edit (that would orphan it from every balance).
+    // Legacy transactions that never had a source can still be edited freely.
+    const editingHadSource = !!(editing && (editing.accountId || editing.creditCardId));
+    if (
+      values.type !== "transfer" &&
+      !accountId &&
+      !creditCardId &&
+      (!editing || editingHadSource)
+    ) {
       toast.error("Choose a funding source");
       return;
     }
