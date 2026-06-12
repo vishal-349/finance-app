@@ -49,6 +49,9 @@ const RecurringPage = lazy(() =>
 const AccountsPage = lazy(() =>
   import("@/pages/AccountsPage").then((m) => ({ default: m.AccountsPage })),
 );
+const GoalsPage = lazy(() =>
+  import("@/pages/GoalsPage").then((m) => ({ default: m.GoalsPage })),
+);
 
 function FullScreenLoader() {
   return (
@@ -132,6 +135,7 @@ export const router = createBrowserRouter([
       { path: "/large-expenses", element: page(<LargeExpensesPage />) },
       { path: "/emis", element: page(<EmisPage />) },
       { path: "/recurring", element: page(<RecurringPage />) },
+      { path: "/goals", element: page(<GoalsPage />) },
       { path: "/emergency-fund", element: page(<EmergencyFundPage />) },
       { path: "/sip", element: page(<SipPage />) },
       { path: "/reports", element: page(<ReportsPage />) },

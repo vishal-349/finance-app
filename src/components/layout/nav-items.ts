@@ -11,6 +11,7 @@ import {
   Landmark,
   Repeat,
   Banknote,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,6 +32,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/large-expenses", label: "Large Expenses", icon: Flame },
   { to: "/emis", label: "EMIs", icon: Landmark },
   { to: "/recurring", label: "Recurring", icon: Repeat },
+  { to: "/goals", label: "Savings Goals", icon: Target },
   { to: "/emergency-fund", label: "Emergency Fund", icon: PiggyBank },
   { to: "/sip", label: "SIP & Investments", icon: LineChart },
   { to: "/reports", label: "Reports", icon: BarChart3 },
