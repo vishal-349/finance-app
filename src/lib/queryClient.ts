@@ -28,6 +28,8 @@ export const queryKeys = {
   budgets: (uid: string, monthKey: string) => ["budgets", uid, monthKey] as const,
   transactionsMonth: (uid: string, monthKey: string) =>
     ["transactions", uid, "month", monthKey] as const,
+  /** Every transaction (powers account balances, card outstanding, goal progress). */
+  allTransactions: (uid: string) => ["transactions", uid, "all"] as const,
   transactionsYear: (uid: string, year: number) =>
     ["transactions", uid, "year", year] as const,
   transactionsCategory: (uid: string, monthKey: string, categoryId: string) =>
@@ -41,4 +43,7 @@ export const queryKeys = {
   emiTxns: (uid: string, emiId: string) =>
     ["transactions", uid, "emi", emiId] as const,
   recurringRules: (uid: string) => ["recurringRules", uid] as const,
+  accounts: (uid: string) => ["accounts", uid] as const,
+  savingsGoals: (uid: string) => ["savingsGoals", uid] as const,
+  subscriptions: (uid: string) => ["subscriptions", uid] as const,
 };

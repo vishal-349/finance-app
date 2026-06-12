@@ -3,6 +3,7 @@ import type { MonthKey } from "@/types";
 import {
   createTransaction,
   deleteTransaction,
+  listAllTransactions,
   listTransactionsByCategory,
   listTransactionsByMonth,
   listTransactionsByYear,
@@ -43,6 +44,20 @@ export function useTransactions(monthKey: MonthKey) {
   });
 
   return { ...query, transactions: query.data ?? [], create, update, remove };
+}
+
+/**
+ * Every transaction for the user. Powers account balances, card outstanding and
+ * goal progress (all derived). Shares the "transactions" key prefix so any
+ * transaction mutation invalidates it automatically.
+ */
+export function useAllTransactions() {
+  const uid = useUid();
+  const query = useQuery({
+    queryKey: queryKeys.allTransactions(uid),
+    queryFn: () => listAllTransactions(uid),
+  });
+  return { ...query, transactions: query.data ?? [] };
 }
 
 /** Read-only transactions for a year (year reports). */
