@@ -12,8 +12,14 @@ import {
   updateCreditCard,
   type CreditCardInput,
 } from "@/services/creditCards";
+import { format, endOfMonth } from "date-fns";
 import { cardCycleStats } from "@/lib/derive";
-import { currentCardCycle, currentMonthKey, todayISODate } from "@/lib/date";
+import {
+  currentCardCycle,
+  currentMonthKey,
+  monthKeyToDate,
+  todayISODate,
+} from "@/lib/date";
 import { queryKeys } from "@/lib/queryClient";
 import { useUid } from "./useAuth";
 
@@ -80,12 +86,16 @@ export function useCardStats(): {
   const today = todayISODate();
   const monthKey = currentMonthKey();
 
+  const monthEnd = format(endOfMonth(monthKeyToDate(monthKey)), "yyyy-MM-dd");
+
   const results = useQueries({
     queries: active.map((card: CreditCard) => {
       const { start, end } = currentCardCycle(card.billingDay, today);
-      // Pool must cover both the cycle window and the calendar month.
+      // Pool must cover both the FULL cycle window and the FULL calendar month
+      // (a cycle that closes early in the month must not hide later-dated
+      // month transactions from monthSpend).
       const poolStart = start < `${monthKey}-01` ? start : `${monthKey}-01`;
-      const poolEnd = end > today ? end : today;
+      const poolEnd = [end, today, monthEnd].reduce((a, b) => (a > b ? a : b));
       return {
         queryKey: queryKeys.cardCycleTxns(uid, card.id, poolStart, poolEnd),
         queryFn: () => listCardTransactions(uid, card.id, poolStart, poolEnd),

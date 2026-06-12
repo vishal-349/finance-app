@@ -63,7 +63,7 @@ export function LoginPage() {
 
       <main className="relative z-10 flex w-full max-w-5xl flex-col items-center gap-10">
         {/* Glass card */}
-        <section className="w-full max-w-md space-y-7 rounded-2xl border border-white/10 bg-white/[0.06] p-7 shadow-2xl backdrop-blur-2xl duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both sm:p-9">
+        <section className="w-full max-w-md space-y-7 rounded-2xl border border-white/10 bg-white/[0.06] p-7 shadow-2xl backdrop-blur-2xl duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both motion-reduce:animate-none sm:p-9">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-emerald-400/30 to-teal-500/15">
               <Wallet className="h-5 w-5 text-emerald-300" />
@@ -123,7 +123,7 @@ export function LoginPage() {
           {HIGHLIGHTS.map(({ icon: Icon, title, text }, i) => (
             <li
               key={title}
-              className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+              className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both motion-reduce:animate-none"
               style={{ animationDelay: `${150 + i * 100}ms` }}
             >
               <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-gradient-to-br from-emerald-400/20 to-indigo-500/15">
@@ -141,7 +141,7 @@ export function LoginPage() {
 
         {/* Trust footer */}
         <p
-          className="flex items-center gap-2 text-xs text-slate-500 duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+          className="flex items-center gap-2 text-xs text-slate-500 duration-700 animate-in fade-in slide-in-from-bottom-4 fill-mode-both motion-reduce:animate-none"
           style={{ animationDelay: "600ms" }}
         >
           <ShieldCheck className="h-4 w-4 text-emerald-400/80" />
