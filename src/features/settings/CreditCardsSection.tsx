@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 import {
   Archive,
   ArchiveRestore,
+  Banknote,
   CreditCard as CreditCardIcon,
   Pencil,
   Plus,
+  Receipt,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -17,12 +19,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataState } from "@/components/shared/DataState";
 import { UtilizationBar } from "@/components/shared/UtilizationBar";
 import { CreditCardForm } from "@/features/settings/CreditCardForm";
+import { PayBillDialog } from "@/features/settings/PayBillDialog";
+import { TransactionList } from "@/features/transactions/TransactionList";
 import { useCardStats, useCreditCards } from "@/hooks/useCreditCards";
+import { useAllTransactions } from "@/hooks/useTransactions";
 import { useSettings } from "@/hooks/useSettings";
+import { cardOutstanding, cardPayments } from "@/lib/derive";
 import { formatPercent } from "@/lib/format";
 import { formatDisplayDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -70,12 +83,29 @@ function CardTile({ card, dimmed }: { card: CreditCard; dimmed?: boolean }) {
   );
 }
 
-function CardStatsBlock({ stat }: { stat: CardCycleStats }) {
+function CardStatsBlock({
+  stat,
+  outstanding,
+}: {
+  stat: CardCycleStats;
+  outstanding: number;
+}) {
   const { money } = useSettings();
   const u = stat.utilization;
   const status = u > 0.9 ? "over" : u >= 0.3 ? "warning" : "safe";
   return (
     <div className="space-y-2 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-muted-foreground">Outstanding</span>
+        <span
+          className={cn(
+            "font-semibold tabular-nums",
+            outstanding > 0 && "text-destructive",
+          )}
+        >
+          {money(outstanding)}
+        </span>
+      </div>
       <div className="flex items-center justify-between gap-2">
         <span className="text-muted-foreground">Current cycle spend</span>
         <span className="font-medium tabular-nums">{money(stat.cycleSpend)}</span>
@@ -104,16 +134,27 @@ function CardStatsBlock({ stat }: { stat: CardCycleStats }) {
 export function CreditCardsSection() {
   const cards = useCreditCards();
   const { stats, isLoading: statsLoading } = useCardStats();
+  const { transactions } = useAllTransactions();
   const [showArchived, setShowArchived] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCard | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<CreditCard | null>(null);
+  const [payBill, setPayBill] = useState<CreditCard | null>(null);
+  const [historyFor, setHistoryFor] = useState<CreditCard | null>(null);
 
   const statsById = useMemo(
     () => new Map(stats.map((s) => [s.card.id, s])),
     [stats],
   );
+  const outstandingById = useMemo(
+    () => new Map(cards.all.map((c) => [c.id, cardOutstanding(c.id, transactions)])),
+    [cards.all, transactions],
+  );
   const archived = cards.all.filter((c) => c.archived);
+  const historyPayments = useMemo(
+    () => (historyFor ? cardPayments(transactions, historyFor.id) : []),
+    [historyFor, transactions],
+  );
 
   const openAdd = () => {
     setEditing(null);
@@ -229,8 +270,31 @@ export function CreditCardsSection() {
                           Loading stats…
                         </p>
                       ) : (
-                        stat && <CardStatsBlock stat={stat} />
+                        stat && (
+                          <CardStatsBlock
+                            stat={stat}
+                            outstanding={outstandingById.get(card.id) ?? 0}
+                          />
+                        )
                       )}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setPayBill(card)}
+                        >
+                          <Banknote className="h-4 w-4" /> Pay bill
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setHistoryFor(card)}
+                        >
+                          <Receipt className="h-4 w-4" /> Payments
+                        </Button>
+                      </div>
                       {actionButtons(card)}
                     </div>
                   );
@@ -268,6 +332,34 @@ export function CreditCardsSection() {
       </CardContent>
 
       <CreditCardForm open={formOpen} onOpenChange={setFormOpen} editing={editing} />
+
+      <PayBillDialog
+        open={!!payBill}
+        onOpenChange={(o) => !o && setPayBill(null)}
+        card={payBill}
+        outstanding={payBill ? (outstandingById.get(payBill.id) ?? 0) : 0}
+      />
+
+      <Dialog open={!!historyFor} onOpenChange={(o) => !o && setHistoryFor(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{historyFor?.name} — bill payments</DialogTitle>
+            <DialogDescription>
+              Payments recorded against this card. They reduce the outstanding
+              balance and never count as expenses.
+            </DialogDescription>
+          </DialogHeader>
+          {historyPayments.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No payments recorded yet.
+            </p>
+          ) : (
+            <div className="max-h-[60vh] overflow-y-auto">
+              <TransactionList transactions={historyPayments} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={!!confirmDelete}
