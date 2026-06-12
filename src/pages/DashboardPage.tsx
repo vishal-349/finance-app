@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SpendDonut } from "@/components/charts/SpendDonut";
 import { PlannedVsActual } from "@/features/dashboard/PlannedVsActual";
 import { ModuleWidgets } from "@/features/dashboard/ModuleWidgets";
+import { AccountsOverview } from "@/features/dashboard/AccountsOverview";
 import { CategoryHistoryDialog } from "@/features/transactions/CategoryHistoryDialog";
 import { useMonth } from "@/hooks/useMonth";
 import { useMonthData } from "@/hooks/useMonthData";
@@ -65,6 +66,8 @@ export function DashboardPage() {
             accent={summary.budgetUtilization > 1 ? "destructive" : "default"}
           />
         </div>
+
+        <AccountsOverview />
 
         <ModuleWidgets monthKey={monthKey} transactions={transactions} />
 

@@ -1,14 +1,16 @@
 # FinTrack — Personal Finance Manager
 
-Mobile-first personal finance app. Budgets, transactions, income, EMIs,
-recurring payments, credit cards, large-expense monitoring, emergency fund and
-SIP investments — **all totals derived automatically from transactions**, so
-nothing is ever updated by hand.
+Mobile-first personal finance app. Budgets, transactions, income, multi-account
+& cash-wallet management, self transfers, savings goals, subscriptions, EMIs,
+recurring payments, credit cards (with bill payment), large-expense monitoring,
+emergency fund and SIP investments — **all totals and balances derived
+automatically from transactions**, so nothing is ever updated by hand.
 
-Highlights: daily spend pacing · EMI management with calendar · automatic
-recurring transaction engine (subscriptions, rent, EMIs) · credit-card cycle
-tracking with utilization · EMI vs non-EMI split · monthly/yearly reports +
-annual insights · accent/density/landing-page personalization.
+Highlights: account & cash-wallet balances · self transfers · savings goals with
+forecast · subscription tracking with renewal calendar (MRR/ARR) · funding-source
+tracking on every transaction · credit-card bill payment & outstanding · EMI
+management with calendar · automatic recurring transaction engine · EMI vs
+non-EMI split · monthly/yearly reports + annual insights · personalization.
 
 React + Vite + TypeScript · Tailwind + shadcn/ui · Firebase Auth + Firestore · Vercel.
 
