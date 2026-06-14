@@ -11,10 +11,17 @@ import {
   updateAccount,
   type AccountInput,
 } from "@/services/accounts";
-import { accountBalances, totalLiquidBalance } from "@/lib/derive";
+import {
+  accountBalances,
+  portfolioBreakdown,
+  savingsOutflowByAccount,
+  totalLiquidBalance,
+} from "@/lib/derive";
 import { queryKeys } from "@/lib/queryClient";
 import { useUid } from "./useAuth";
 import { useAllTransactions } from "./useTransactions";
+import { useSip } from "./useSip";
+import { useEmergencyFunds } from "./useEmergencyFunds";
 
 export function useAccounts() {
   const uid = useUid();
@@ -94,17 +101,48 @@ export function useAccountBalances() {
     isError: txError,
     error: txErr,
   } = useAllTransactions();
+  const sip = useSip();
+  const ef = useEmergencyFunds();
+
+  // SIP + emergency-fund deposits leave cash too — attribute each to its funding
+  // account (legacy unattributed entries fall back to the primary account).
+  const savingsOut = useMemo(
+    () =>
+      savingsOutflowByAccount(
+        sip.entries,
+        ef.entries,
+        new Set(active.map((a) => a.id)),
+        active[0]?.id,
+      ),
+    [sip.entries, ef.entries, active],
+  );
 
   const balances = useMemo(
-    () => accountBalances(active, transactions),
-    [active, transactions],
+    () => accountBalances(active, transactions, savingsOut),
+    [active, transactions, savingsOut],
   );
 
   return {
     balances,
     total: totalLiquidBalance(balances),
-    isLoading: accLoading || txLoading,
-    isError: accError || txError,
-    error: accErr ?? txErr ?? null,
+    isLoading: accLoading || txLoading || sip.isLoading || ef.isLoading,
+    isError: accError || txError || sip.isError || ef.isError,
+    error: accErr ?? txErr ?? sip.error ?? ef.error ?? null,
   };
+}
+
+/**
+ * Reconciling breakdown of total Net Cash (opening + in − out − saved). Powers
+ * the "how is this calculated?" disclosures so the headline figure is never a
+ * black box. Equals the sum of account balances by construction.
+ */
+export function useCashBreakdown() {
+  const { active } = useAccounts();
+  const { transactions } = useAllTransactions();
+  const sip = useSip();
+  const ef = useEmergencyFunds();
+  return useMemo(
+    () => portfolioBreakdown(active, transactions, sip.entries, ef.entries),
+    [active, transactions, sip.entries, ef.entries],
+  );
 }

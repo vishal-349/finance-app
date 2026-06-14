@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSip } from "@/hooks/useSip";
+import { useAccounts } from "@/hooks/useAccounts";
 import { currentMonthKey } from "@/lib/date";
 import type { SipInvestment, SipKind } from "@/types";
 
@@ -36,11 +37,13 @@ interface Props {
 
 export function SipForm({ open, onOpenChange, editing }: Props) {
   const { create, update } = useSip();
+  const { active: accounts } = useAccounts();
   const [monthKey, setMonthKey] = useState(currentMonthKey());
   const [name, setName] = useState("");
   const [kind, setKind] = useState<SipKind>("mutual_fund");
   const [planned, setPlanned] = useState("");
   const [actual, setActual] = useState("");
+  const [accountId, setAccountId] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +52,8 @@ export function SipForm({ open, onOpenChange, editing }: Props) {
     setKind(editing?.kind ?? "mutual_fund");
     setPlanned(editing ? String(editing.planned) : "");
     setActual(editing ? String(editing.actual) : "");
-  }, [open, editing]);
+    setAccountId(editing?.accountId ?? accounts[0]?.id ?? "");
+  }, [open, editing, accounts]);
 
   const submit = async () => {
     if (!name.trim()) {
@@ -62,6 +66,7 @@ export function SipForm({ open, onOpenChange, editing }: Props) {
       kind,
       planned: Number(planned) || 0,
       actual: Number(actual) || 0,
+      accountId: accountId || undefined,
     };
     try {
       if (editing) {
@@ -145,6 +150,26 @@ export function SipForm({ open, onOpenChange, editing }: Props) {
                 onChange={(e) => setActual(e.target.value)}
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>From account</Label>
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {accounts.length === 0
+                ? "No accounts yet — add one in Settings → Accounts."
+                : "The actual amount leaves this account's balance."}
+            </p>
           </div>
         </div>
         <DialogFooter>

@@ -1,4 +1,5 @@
-import { LogOut, Moon, Sun, Laptop } from "lucide-react";
+import { LogOut, Moon, Sun, Laptop, HelpCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -60,6 +61,12 @@ export function UserMenu() {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/help">
+            <HelpCircle className="mr-2 h-4 w-4" />
+            How to use
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={async () => {
             await signOutUser();

@@ -55,6 +55,12 @@ const GoalsPage = lazy(() =>
 const SubscriptionsPage = lazy(() =>
   import("@/pages/SubscriptionsPage").then((m) => ({ default: m.SubscriptionsPage })),
 );
+const HelpPage = lazy(() =>
+  import("@/pages/HelpPage").then((m) => ({ default: m.HelpPage })),
+);
+const CreditCardsPage = lazy(() =>
+  import("@/pages/CreditCardsPage").then((m) => ({ default: m.CreditCardsPage })),
+);
 
 function FullScreenLoader() {
   return (
@@ -135,6 +141,7 @@ export const router = createBrowserRouter([
       { path: "/budgets", element: page(<BudgetsPage />) },
       { path: "/income", element: page(<IncomePage />) },
       { path: "/accounts", element: page(<AccountsPage />) },
+      { path: "/credit-cards", element: page(<CreditCardsPage />) },
       { path: "/large-expenses", element: page(<LargeExpensesPage />) },
       { path: "/emis", element: page(<EmisPage />) },
       { path: "/recurring", element: page(<RecurringPage />) },
@@ -143,6 +150,7 @@ export const router = createBrowserRouter([
       { path: "/emergency-fund", element: page(<EmergencyFundPage />) },
       { path: "/sip", element: page(<SipPage />) },
       { path: "/reports", element: page(<ReportsPage />) },
+      { path: "/help", element: page(<HelpPage />) },
       { path: "/settings", element: page(<SettingsPage />) },
     ],
   },

@@ -11,7 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useEmergencyFunds } from "@/hooks/useEmergencyFunds";
+import { useAccounts } from "@/hooks/useAccounts";
 import { currentMonthKey } from "@/lib/date";
 import type { EmergencyFund } from "@/types";
 
@@ -23,16 +31,19 @@ interface Props {
 
 export function EmergencyFundForm({ open, onOpenChange, editing }: Props) {
   const { upsert } = useEmergencyFunds();
+  const { active: accounts } = useAccounts();
   const [monthKey, setMonthKey] = useState(currentMonthKey());
   const [planned, setPlanned] = useState("");
   const [actual, setActual] = useState("");
+  const [accountId, setAccountId] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setMonthKey(editing?.monthKey ?? currentMonthKey());
     setPlanned(editing ? String(editing.planned) : "");
     setActual(editing ? String(editing.actual) : "");
-  }, [open, editing]);
+    setAccountId(editing?.accountId ?? accounts[0]?.id ?? "");
+  }, [open, editing, accounts]);
 
   const submit = async () => {
     try {
@@ -40,6 +51,7 @@ export function EmergencyFundForm({ open, onOpenChange, editing }: Props) {
         monthKey,
         planned: Number(planned) || 0,
         actual: Number(actual) || 0,
+        accountId: accountId || undefined,
       });
       toast.success(editing ? "Entry updated" : "Entry added");
       onOpenChange(false);
@@ -91,6 +103,26 @@ export function EmergencyFundForm({ open, onOpenChange, editing }: Props) {
                 onChange={(e) => setActual(e.target.value)}
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>From account</Label>
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {accounts.length === 0
+                ? "No accounts yet — add one in Settings → Accounts."
+                : "The actual amount leaves this account's balance."}
+            </p>
           </div>
         </div>
         <DialogFooter>

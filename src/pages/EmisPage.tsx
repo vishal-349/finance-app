@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   CalendarClock,
   Landmark,
@@ -27,6 +28,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useSettings } from "@/hooks/useSettings";
 import { emiMonthlyBurden } from "@/lib/derive";
 import { currentMonthKey, formatDisplayDate } from "@/lib/date";
+import { cn } from "@/lib/utils";
 import type { Emi, EmiProgress } from "@/types";
 
 export function EmisPage() {
@@ -51,6 +53,15 @@ export function EmisPage() {
   const [editing, setEditing] = useState<Emi | null>(null);
   const [confirmStop, setConfirmStop] = useState<Emi | null>(null);
   const [confirmDel, setConfirmDel] = useState<Emi | null>(null);
+
+  // Deep-link target: dashboard widgets link to /emis?focus=<id>.
+  const [params] = useSearchParams();
+  const focusId = params.get("focus");
+  useEffect(() => {
+    if (!focusId || isLoading) return;
+    const el = document.getElementById(`emi-${focusId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focusId, isLoading]);
 
   const cardMap = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
   const burden = useMemo(() => emiMonthlyBurden(all, currentMonthKey()), [all]);
@@ -150,7 +161,14 @@ export function EmisPage() {
                   : undefined;
                 const isPaused = p.emi.status === "paused";
                 return (
-                  <Card key={p.emi.id}>
+                  <Card
+                    key={p.emi.id}
+                    id={`emi-${p.emi.id}`}
+                    className={cn(
+                      "scroll-mt-24 transition-shadow",
+                      focusId === p.emi.id && "ring-2 ring-primary shadow-glow",
+                    )}
+                  >
                     <CardContent className="space-y-3 p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">

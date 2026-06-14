@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  PiggyBank,
-  LineChart,
-  Banknote,
-  Percent,
-  Gauge,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, PiggyBank, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MonthPicker } from "@/components/shared/MonthPicker";
 import { StatCard } from "@/components/shared/StatCard";
@@ -41,62 +32,80 @@ export function DashboardPage() {
       />
 
       <DataState isLoading={isLoading} isError={isError} error={error} onRetry={refetch}>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Income" value={money(summary.income)} icon={TrendingUp} accent="success" />
-          <StatCard label="Planned Expenses" value={money(summary.plannedExpenses)} icon={Wallet} />
-          <StatCard label="Actual Expenses" value={money(summary.actualExpenses)} icon={TrendingDown} />
-          <StatCard
-            label="Remaining Balance"
-            value={money(summary.remainingBalance)}
-            icon={Banknote}
-            accent={summary.remainingBalance < 0 ? "destructive" : "default"}
-          />
-          <StatCard label="Emergency Fund" value={money(summary.emergencyFundSaved)} icon={PiggyBank} hint="Saved this month" />
-          <StatCard label="SIP Invested" value={money(summary.sipInvested)} icon={LineChart} hint="This month" />
-          <StatCard
-            label="Savings Rate"
-            value={formatPercent(summary.savingsRate)}
-            icon={Percent}
-            accent={summary.savingsRate < 0 ? "destructive" : "success"}
-          />
-          <StatCard
-            label="Budget Utilization"
-            value={formatPercent(summary.budgetUtilization)}
-            icon={Gauge}
-            accent={summary.budgetUtilization > 1 ? "destructive" : "default"}
-          />
-        </div>
-
+        {/* Truthful cash position — leads the page */}
         <AccountsOverview />
 
+        {/* This month's flow: where income went. Each card drills down. */}
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground">This month</h2>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard
+              label="Income"
+              value={money(summary.income)}
+              icon={TrendingUp}
+              accent="success"
+              to="/income"
+            />
+            <StatCard
+              label="Spending"
+              value={money(summary.actualExpenses)}
+              icon={TrendingDown}
+              to="/transactions"
+              hint={
+                summary.plannedExpenses > 0
+                  ? `${formatPercent(summary.budgetUtilization)} of budget`
+                  : "No budget set"
+              }
+              accent={summary.budgetUtilization > 1 ? "destructive" : "default"}
+            />
+            <StatCard
+              label="Saved & invested"
+              value={money(summary.savedAndInvested)}
+              icon={PiggyBank}
+              to="/goals"
+              hint="Goals + Emergency + SIP"
+              accent="success"
+            />
+            <StatCard
+              label="Left this month"
+              value={money(summary.remainingBalance)}
+              icon={Wallet}
+              to="/reports"
+              hint={`${formatPercent(summary.savingsRate)} savings rate`}
+              accent={summary.remainingBalance < 0 ? "destructive" : "default"}
+            />
+          </div>
+        </section>
+
+        {/* Commitments & detail modules — each deep-links to its page/record */}
         <ModuleWidgets monthKey={monthKey} transactions={transactions} />
 
         {settings.dashboardLayout === "full" && (
-        <div className="grid gap-6 lg:grid-cols-5">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Spending breakdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SpendDonut summaries={categorySummaries} />
-            </CardContent>
-          </Card>
+          <div className="grid gap-6 lg:grid-cols-5">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">Spending breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SpendDonut summaries={categorySummaries} />
+              </CardContent>
+            </Card>
 
-          <Card className="lg:col-span-3">
-            <CardHeader>
-              <CardTitle className="text-base">Planned vs Actual</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {categorySummaries.length === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  Add expense categories and budgets to see this breakdown.
-                </p>
-              ) : (
-                <PlannedVsActual summaries={categorySummaries} onSelect={setHistory} />
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="text-base">Planned vs Actual</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {categorySummaries.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Add expense categories and budgets to see this breakdown.
+                  </p>
+                ) : (
+                  <PlannedVsActual summaries={categorySummaries} onSelect={setHistory} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
       </DataState>
 

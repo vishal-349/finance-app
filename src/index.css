@@ -28,6 +28,24 @@
     --input: 214 32% 91%;
     --ring: 158 64% 32%;
     --radius: 0.75rem;
+
+    /* ---- Depth system (light): soft, layered, neutral shadows ---- */
+    --elev-1: 0 1px 2px -1px hsl(222 47% 11% / 0.08), 0 1px 3px hsl(222 47% 11% / 0.05);
+    --elev-2: 0 4px 8px -3px hsl(222 47% 11% / 0.10), 0 2px 4px -2px hsl(222 47% 11% / 0.06);
+    --elev-3: 0 14px 28px -8px hsl(222 47% 11% / 0.16), 0 6px 12px -6px hsl(222 47% 11% / 0.08);
+    --elev-4: 0 28px 50px -12px hsl(222 47% 11% / 0.22), 0 10px 20px -10px hsl(222 47% 11% / 0.12);
+    /* 1px top highlight that sells the extruded/glass look */
+    --highlight-top: inset 0 1px 0 0 hsl(0 0% 100% / 0.85);
+    /* Glass surface: translucent white over the ambient mesh */
+    --glass-bg: linear-gradient(180deg, hsl(0 0% 100% / 0.82), hsl(0 0% 100% / 0.62));
+    --glass-border: hsl(0 0% 100% / 0.65);
+    --shadow-glass: var(--elev-3), var(--highlight-top);
+    --glow-primary: 0 8px 24px -8px hsl(var(--primary) / 0.45);
+    --glow-primary-lg: 0 18px 48px -12px hsl(var(--primary) / 0.55);
+    /* Ambient page tints */
+    --mesh-1: hsl(var(--primary) / 0.10);
+    --mesh-2: hsl(217 91% 60% / 0.08);
+    --mesh-3: hsl(142 71% 45% / 0.07);
   }
 
   .dark {
@@ -54,6 +72,21 @@
     --border: 217 33% 20%;
     --input: 217 33% 20%;
     --ring: 158 64% 42%;
+
+    /* ---- Depth system (dark): deeper shadows + faint top light ---- */
+    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.40);
+    --elev-2: 0 4px 12px -2px hsl(0 0% 0% / 0.50), 0 2px 4px -2px hsl(0 0% 0% / 0.40);
+    --elev-3: 0 16px 32px -10px hsl(0 0% 0% / 0.60), 0 6px 12px -6px hsl(0 0% 0% / 0.45);
+    --elev-4: 0 30px 60px -14px hsl(0 0% 0% / 0.70), 0 12px 24px -12px hsl(0 0% 0% / 0.55);
+    --highlight-top: inset 0 1px 0 0 hsl(0 0% 100% / 0.08);
+    --glass-bg: linear-gradient(180deg, hsl(0 0% 100% / 0.07), hsl(0 0% 100% / 0.02));
+    --glass-border: hsl(0 0% 100% / 0.10);
+    --shadow-glass: var(--elev-3), var(--highlight-top);
+    --glow-primary: 0 8px 28px -6px hsl(var(--primary) / 0.55);
+    --glow-primary-lg: 0 20px 56px -10px hsl(var(--primary) / 0.65);
+    --mesh-1: hsl(var(--primary) / 0.16);
+    --mesh-2: hsl(217 91% 60% / 0.14);
+    --mesh-3: hsl(142 71% 45% / 0.12);
   }
 }
 
@@ -99,5 +132,103 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* ===========================================================================
+   3D / depth design language — premium glassmorphism utilities.
+   Token-aware (uses theme CSS vars) so everything works in light AND dark
+   and respects the accent-color system.
+   =========================================================================== */
+@layer components {
+  /* Ambient gradient-mesh page background — soft colored light sources. */
+  .bg-mesh {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(60rem 60rem at 0% -10%, var(--mesh-1), transparent 45%),
+      radial-gradient(50rem 50rem at 100% 0%, var(--mesh-2), transparent 45%),
+      radial-gradient(55rem 55rem at 50% 120%, var(--mesh-3), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* Frosted-glass surface: translucent, blurred, with a top light edge. */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* The default "floating" card: solid surface + layered elevation + top edge. */
+  .surface-3d {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--elev-2), var(--highlight-top);
+  }
+}
+
+@layer utilities {
+  /* Hover-lift: rises toward the viewer with deepening shadow. */
+  .lift {
+    transition:
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
+  .lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--elev-4), var(--highlight-top);
+  }
+
+  /* Subtle perspective tilt on pointer hover (premium, not dizzying). */
+  .tilt {
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tilt:hover {
+    transform: perspective(1200px) rotateX(3deg) rotateY(-4deg) translateY(-3px);
+  }
+
+  /* Gradient text using the brand ramp. */
+  .text-gradient {
+    background-image: linear-gradient(
+      120deg,
+      hsl(var(--primary)),
+      hsl(217 91% 60%),
+      hsl(var(--primary))
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Animated sheen for skeletons / premium highlights. */
+  .sheen {
+    background-image: linear-gradient(
+      110deg,
+      transparent 30%,
+      hsl(0 0% 100% / 0.12) 50%,
+      transparent 70%
+    );
+    background-size: 200% 100%;
+  }
+}
+
+/* Accessibility: honor reduced-motion — kill transforms & looping animation. */
+@media (prefers-reduced-motion: reduce) {
+  .lift,
+  .tilt {
+    transition: none;
+  }
+  .lift:hover,
+  .tilt:hover {
+    transform: none;
+  }
+  .animate-float,
+  .animate-shimmer,
+  .animate-gradient-pan {
+    animation: none !important;
   }
 }

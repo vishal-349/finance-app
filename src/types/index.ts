@@ -86,8 +86,10 @@ export interface PaymentMethod extends BaseDoc {
 /**
  * A bank account or cash wallet — the primary funding source for transactions.
  * The current balance is NEVER stored: it's derived as
- * `openingBalance + income − expense − transfersOut + transfersIn − billPayments − goalContributions`
- * (see `accountBalance` in `derive.ts`).
+ * `openingBalance + income − expense − transfersOut + transfersIn − billPayments
+ *  − goalContributions − sipInvested − emergencyFundSaved`
+ * (see `accountBalance` in `derive.ts`). SIP/emergency-fund outflows come from
+ * those records' `actual` amounts, attributed to their funding account.
  */
 export interface Account extends BaseDoc {
   name: string;
@@ -254,6 +256,12 @@ export interface EmergencyFund extends BaseDoc {
   monthKey: MonthKey;
   planned: number;
   actual: number;
+  /**
+   * Cash account the `actual` deposit is drawn from. Reduces that account's
+   * derived balance (money set aside leaves your cash). Legacy entries without
+   * one are attributed to the primary account when computing balances.
+   */
+  accountId?: string;
   note?: string;
 }
 
@@ -264,6 +272,8 @@ export interface SipInvestment extends BaseDoc {
   kind: SipKind;
   /** Fund / stock / custom instrument name. */
   name: string;
+  /** Cash account the `actual` investment is drawn from (see EmergencyFund). */
+  accountId?: string;
   note?: string;
 }
 
@@ -336,13 +346,41 @@ export interface CardCycleStats {
   transactionCount: number;
 }
 
+/**
+ * Reconciling breakdown of total Net Cash across all accounts (never stored).
+ * netCash = opening + income + transfersIn − spending − transfersOut
+ *           − billPayments − goals − savings.
+ * (Across the portfolio transfersIn === transfersOut, so they cancel.)
+ */
+export interface CashBreakdown {
+  /** Sum of account opening balances. */
+  opening: number;
+  /** Income credited to accounts. */
+  income: number;
+  transfersIn: number;
+  transfersOut: number;
+  /** Expenses paid from accounts (card spend is excluded — it's owed, not paid). */
+  spending: number;
+  /** Credit-card bill payments made from accounts. */
+  billPayments: number;
+  /** Savings-goal contributions. */
+  goals: number;
+  /** SIP invested + emergency-fund saved. */
+  savings: number;
+  /** Resulting total = current Net Cash. */
+  netCash: number;
+}
+
 /** Derived balance + flows for one account (never stored). */
 export interface AccountBalance {
   account: Account;
   balance: number;
   /** Money that has entered this account (income + transfers in). */
   totalIn: number;
-  /** Money that has left (expense + transfers out + bill payments + goal contributions). */
+  /**
+   * Money that has left: expenses + transfers out + bill payments + goal
+   * contributions + SIP invested + emergency-fund saved.
+   */
   totalOut: number;
   transactionCount: number;
 }
@@ -389,6 +427,11 @@ export interface MonthSummary {
   actualExpenses: number;
   emergencyFundSaved: number;
   sipInvested: number;
+  /** Savings-goal contributions made this month (type `goal`). */
+  goalContributed: number;
+  /** Money set aside this month = emergency fund + SIP + goal contributions. */
+  savedAndInvested: number;
+  /** What's left of this month's income after spending AND saving/investing. */
   remainingBalance: number;
   savingsRate: number; // share of income not spent; negative on a deficit
   budgetUtilization: number; // 0..1 (actual / planned)

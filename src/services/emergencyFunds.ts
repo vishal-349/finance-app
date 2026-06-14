@@ -26,13 +26,18 @@ export function getEmergencyFundForMonth(
 export async function upsertEmergencyFund(
   uid: string,
   monthKey: MonthKey,
-  data: { planned: number; actual: number; note?: string },
+  data: { planned: number; actual: number; accountId?: string; note?: string },
 ): Promise<void> {
+  // Firestore rejects `undefined` — only include optional fields when present.
+  const clean: Record<string, unknown> = { planned: data.planned, actual: data.actual };
+  if (data.accountId) clean.accountId = data.accountId;
+  if (data.note) clean.note = data.note;
+  type EfData = Omit<EmergencyFund, "id" | "createdAt" | "updatedAt">;
   const existing = await getEmergencyFundForMonth(uid, monthKey);
   if (existing.length) {
-    await updateDocById<EmergencyFund>(uid, NAME, existing[0].id, data);
+    await updateDocById<EmergencyFund>(uid, NAME, existing[0].id, clean as Partial<EfData>);
   } else {
-    await createDoc<EmergencyFund>(uid, NAME, { monthKey, ...data });
+    await createDoc<EmergencyFund>(uid, NAME, { monthKey, ...clean } as EfData);
   }
 }
 

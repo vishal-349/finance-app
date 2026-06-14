@@ -16,6 +16,8 @@ export type SipInput = {
   actual: number;
   kind: SipKind;
   name: string;
+  /** Cash account the investment is drawn from. */
+  accountId?: string;
   note?: string;
 };
 
@@ -25,7 +27,7 @@ export function listSipInvestments(uid: string): Promise<SipInvestment[]> {
 }
 
 export function createSip(uid: string, input: SipInput): Promise<string> {
-  return createDoc<SipInvestment>(uid, NAME, input);
+  return createDoc<SipInvestment>(uid, NAME, stripUndefined(input));
 }
 
 export function updateSip(
@@ -33,7 +35,14 @@ export function updateSip(
   id: string,
   patch: Partial<SipInput>,
 ): Promise<void> {
-  return updateDocById<SipInvestment>(uid, NAME, id, patch);
+  return updateDocById<SipInvestment>(uid, NAME, id, stripUndefined(patch));
+}
+
+/** Firestore rejects `undefined` field values — drop them. */
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined),
+  ) as T;
 }
 
 export const deleteSip = (uid: string, id: string) => deleteDocById(uid, NAME, id);

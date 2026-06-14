@@ -2,6 +2,7 @@ import type {
   Account,
   AccountBalance,
   Budget,
+  CashBreakdown,
   Category,
   CategorySummary,
   CreditCard,
@@ -120,12 +121,20 @@ export function buildCategorySummaries(
     .sort((a, b) => a.category.order - b.category.order);
 }
 
+/** Total of `goal` contribution transactions in the set. */
+export function sumGoalContributions(transactions: Transaction[]): number {
+  return transactions
+    .filter((t) => t.type === "goal")
+    .reduce((acc, t) => acc + t.amount, 0);
+}
+
 export function buildMonthSummary(
   monthKey: string,
   budgets: Budget[],
   transactions: Transaction[],
   emergencyFundForMonth: number,
   sipForMonth: number,
+  goalForMonth: number,
 ): MonthSummary {
   const income = sumIncome(transactions);
   const actualExpenses = sumExpenses(transactions);
@@ -133,9 +142,11 @@ export function buildMonthSummary(
   // double-count toward the planned total.
   const plannedByCategory = new Map(budgets.map((b) => [b.categoryId, b.amount]));
   const plannedExpenses = [...plannedByCategory.values()].reduce((acc, v) => acc + v, 0);
-  // What's left after spending, emergency-fund saving and SIP investing.
-  const remainingBalance =
-    income - actualExpenses - emergencyFundForMonth - sipForMonth;
+  // Money deliberately set aside this month — all of it leaves available cash
+  // (each draws from an account), so it's treated consistently as an outflow.
+  const savedAndInvested = emergencyFundForMonth + sipForMonth + goalForMonth;
+  // What's left of this month's income after spending AND saving/investing.
+  const remainingBalance = income - actualExpenses - savedAndInvested;
   // Savings rate = money not spent on expenses, as a share of income.
   // Allowed to go negative: spending more than you earn is a real deficit and
   // must not be flattened to a misleading 0%.
@@ -149,6 +160,8 @@ export function buildMonthSummary(
     actualExpenses,
     emergencyFundSaved: emergencyFundForMonth,
     sipInvested: sipForMonth,
+    goalContributed: goalForMonth,
+    savedAndInvested,
     remainingBalance,
     savingsRate,
     budgetUtilization,
@@ -273,10 +286,18 @@ export function emiMonthlyBurden(emis: Emi[], monthKey: MonthKey): number {
  * Current balance + flows for one account, derived from the FULL transaction
  * set. Balance = opening + money in − money out, where:
  *  in  = income credited here + transfers into here
- *  out = expenses paid from here + transfers out + bill payments + goal contributions
+ *  out = expenses paid from here + transfers out + bill payments + goal
+ *        contributions + `savingsOut` (SIP + emergency-fund deposits)
  * (Card expenses don't touch an account — they raise the card's outstanding.)
+ *
+ * `savingsOut` carries SIP/emergency-fund outflows that aren't transactions but
+ * still leave this account's cash; the caller supplies the per-account total.
  */
-export function accountBalance(account: Account, txns: Transaction[]): AccountBalance {
+export function accountBalance(
+  account: Account,
+  txns: Transaction[],
+  savingsOut = 0,
+): AccountBalance {
   let totalIn = 0;
   let totalOut = 0;
   let transactionCount = 0;
@@ -298,6 +319,7 @@ export function accountBalance(account: Account, txns: Transaction[]): AccountBa
       transactionCount++;
     }
   }
+  totalOut += savingsOut;
   return {
     account,
     balance: account.openingBalance + totalIn - totalOut,
@@ -307,13 +329,97 @@ export function accountBalance(account: Account, txns: Transaction[]): AccountBa
   };
 }
 
-export function accountBalances(accounts: Account[], txns: Transaction[]): AccountBalance[] {
-  return accounts.map((a) => accountBalance(a, txns));
+export function accountBalances(
+  accounts: Account[],
+  txns: Transaction[],
+  savingsOutByAccount?: Map<string, number>,
+): AccountBalance[] {
+  return accounts.map((a) =>
+    accountBalance(a, txns, savingsOutByAccount?.get(a.id) ?? 0),
+  );
+}
+
+/**
+ * Map of SIP + emergency-fund outflow per account, summed over ALL entries
+ * (these permanently left the account, like a lifetime balance). Entries whose
+ * funding account is missing/unknown are attributed to `primaryAccountId` so the
+ * total always reconciles, even for legacy records saved before account linking.
+ */
+export function savingsOutflowByAccount(
+  sips: SipInvestment[],
+  funds: EmergencyFund[],
+  accountIds: Set<string>,
+  primaryAccountId: string | undefined,
+): Map<string, number> {
+  const map = new Map<string, number>();
+  const add = (accountId: string | undefined, amount: number) => {
+    if (!(amount > 0)) return;
+    const id = accountId && accountIds.has(accountId) ? accountId : primaryAccountId;
+    if (!id) return;
+    map.set(id, (map.get(id) ?? 0) + amount);
+  };
+  for (const s of sips) add(s.accountId, s.actual);
+  for (const f of funds) add(f.accountId, f.actual);
+  return map;
 }
 
 /** Total liquid cash across all (non-archived) accounts. */
 export function totalLiquidBalance(balances: AccountBalance[]): number {
   return balances.reduce((acc, b) => acc + b.balance, 0);
+}
+
+/**
+ * Reconciling "where did Net Cash come from" breakdown across the given
+ * accounts. Each line is bucketed only when its transaction is assigned to one
+ * of these accounts, so the result equals the sum of their derived balances.
+ * SIP/emergency-fund `actual` always counts (it's attributed to an account when
+ * balances are computed). Transfers between these accounts net to zero.
+ */
+export function portfolioBreakdown(
+  accounts: Account[],
+  txns: Transaction[],
+  sips: SipInvestment[],
+  funds: EmergencyFund[],
+): CashBreakdown {
+  const ids = new Set(accounts.map((a) => a.id));
+  let opening = 0;
+  for (const a of accounts) opening += a.openingBalance;
+  let income = 0;
+  let transfersIn = 0;
+  let transfersOut = 0;
+  let spending = 0;
+  let billPayments = 0;
+  let goals = 0;
+  for (const t of txns) {
+    const fromHere = t.accountId ? ids.has(t.accountId) : false;
+    if (t.type === "income" && fromHere) income += t.amount;
+    else if (t.type === "transfer") {
+      if (t.toAccountId && ids.has(t.toAccountId)) transfersIn += t.amount;
+      if (fromHere) transfersOut += t.amount;
+    } else if (t.type === "expense" && fromHere) spending += t.amount;
+    else if (t.type === "cc_payment" && fromHere) billPayments += t.amount;
+    else if (t.type === "goal" && fromHere) goals += t.amount;
+  }
+  // SIP/EF reduce cash regardless of which account is named (unattributed
+  // entries fall back to the primary account in balance derivation).
+  const savings =
+    (accounts.length > 0
+      ? sips.reduce((a, s) => a + (s.actual || 0), 0) +
+        funds.reduce((a, f) => a + (f.actual || 0), 0)
+      : 0);
+  const netCash =
+    opening + income + transfersIn - transfersOut - spending - billPayments - goals - savings;
+  return {
+    opening,
+    income,
+    transfersIn,
+    transfersOut,
+    spending,
+    billPayments,
+    goals,
+    savings,
+    netCash,
+  };
 }
 
 /* ---- Savings goal derivations (derived — never stored) ---- */

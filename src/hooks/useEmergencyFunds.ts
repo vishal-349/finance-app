@@ -21,14 +21,20 @@ export function useEmergencyFunds() {
       monthKey,
       planned,
       actual,
+      accountId,
       note,
     }: {
       monthKey: MonthKey;
       planned: number;
       actual: number;
+      accountId?: string;
       note?: string;
-    }) => upsertEmergencyFund(uid, monthKey, { planned, actual, note }),
-    onSuccess: invalidate,
+    }) => upsertEmergencyFund(uid, monthKey, { planned, actual, accountId, note }),
+    // Balances depend on EF outflow — refresh the accounts cache too.
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: queryKeys.accounts(uid) });
+    },
   });
 
   const remove = useMutation({

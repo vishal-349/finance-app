@@ -5,6 +5,7 @@ import {
   buildMonthSummary,
   emergencyFundActualForMonth,
   sipActualForMonth,
+  sumGoalContributions,
 } from "@/lib/derive";
 import { useCategories } from "./useCategories";
 import { useBudgets } from "./useBudgets";
@@ -45,11 +46,22 @@ export function useMonthData(monthKey: MonthKey) {
     () => sipActualForMonth(sip.entries, monthKey),
     [sip.entries, monthKey],
   );
+  const goalForMonth = useMemo(
+    () => sumGoalContributions(txns.transactions),
+    [txns.transactions],
+  );
 
   const summary = useMemo(
     () =>
-      buildMonthSummary(monthKey, budgets.budgets, txns.transactions, efForMonth, sipForMonth),
-    [monthKey, budgets.budgets, txns.transactions, efForMonth, sipForMonth],
+      buildMonthSummary(
+        monthKey,
+        budgets.budgets,
+        txns.transactions,
+        efForMonth,
+        sipForMonth,
+        goalForMonth,
+      ),
+    [monthKey, budgets.budgets, txns.transactions, efForMonth, sipForMonth, goalForMonth],
   );
 
   return {

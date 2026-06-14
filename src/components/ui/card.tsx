@@ -1,14 +1,37 @@
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+const cardVariants = cva("text-card-foreground", {
+  variants: {
+    variant: {
+      // Floating solid surface — layered elevation + top light edge.
+      default: "rounded-xl surface-3d",
+      // Frosted glass over the ambient mesh background.
+      glass: "rounded-2xl glass",
+      // Higher elevation for hero / emphasized panels.
+      elevated:
+        "rounded-2xl bg-card border border-border shadow-e3 [box-shadow:var(--elev-3),var(--highlight-top)]",
+      // Legacy flat look (border + hairline shadow only).
+      flat: "rounded-xl border bg-card shadow-sm",
+    },
+    interactive: {
+      true: "lift cursor-default",
+      false: "",
+    },
+  },
+  defaultVariants: { variant: "default", interactive: false },
+});
+
+export interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardVariants> {}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant, interactive, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        "rounded-xl border bg-card text-card-foreground shadow-sm",
-        className,
-      )}
+      className={cn(cardVariants({ variant, interactive }), className)}
       {...props}
     />
   ),
@@ -55,4 +78,12 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  cardVariants,
+};

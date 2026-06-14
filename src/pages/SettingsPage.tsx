@@ -4,7 +4,6 @@ import { CategoryManager } from "@/features/categories/CategoryManager";
 import { ManagedListSection } from "@/features/settings/ManagedListSection";
 import { PreferencesSection } from "@/features/settings/PreferencesSection";
 import { AppearanceSection } from "@/features/settings/AppearanceSection";
-import { CreditCardsSection } from "@/features/settings/CreditCardsSection";
 import { AccountsSection } from "@/features/settings/AccountsSection";
 import { DataSection } from "@/features/settings/DataSection";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
@@ -25,7 +24,6 @@ export function SettingsPage() {
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="accounts">Accounts</TabsTrigger>
           <TabsTrigger value="payment">Payment Methods</TabsTrigger>
-          <TabsTrigger value="cards">Credit Cards</TabsTrigger>
           <TabsTrigger value="income">Income Sources</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
@@ -44,9 +42,6 @@ export function SettingsPage() {
             itemNoun="Payment Method"
             controller={paymentMethods}
           />
-        </TabsContent>
-        <TabsContent value="cards">
-          <CreditCardsSection />
         </TabsContent>
         <TabsContent value="income">
           <ManagedListSection
