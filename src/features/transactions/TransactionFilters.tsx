@@ -36,7 +36,7 @@ export function TransactionFilters({ filters, setFilters, isActive, onReset }: P
         <Input
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
-          placeholder="Search merchant or note…"
+          placeholder="Search name, category, account, amount…"
           className="pl-8"
         />
       </div>
