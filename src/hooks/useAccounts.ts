@@ -13,13 +13,16 @@ import {
 } from "@/services/accounts";
 import {
   accountBalances,
+  entriesSinceMonth,
   portfolioBreakdown,
   savingsOutflowByAccount,
   totalLiquidBalance,
+  transactionsSince,
 } from "@/lib/derive";
 import { queryKeys } from "@/lib/queryClient";
 import { useUid } from "./useAuth";
 import { useAllTransactions } from "./useTransactions";
+import { useSettings } from "./useSettings";
 import { useSip } from "./useSip";
 import { useEmergencyFunds } from "./useEmergencyFunds";
 
@@ -103,23 +106,29 @@ export function useAccountBalances() {
   } = useAllTransactions();
   const sip = useSip();
   const ef = useEmergencyFunds();
+  const { settings } = useSettings();
+  const start = settings.trackingStartDate;
+
+  // Only count flows on/after the tracking-start date — pre-tracking entries
+  // (e.g. backfilled EMI installments) are history and must not move cash.
+  const tracked = useMemo(() => transactionsSince(transactions, start), [transactions, start]);
 
   // SIP + emergency-fund deposits leave cash too — attribute each to its funding
   // account (legacy unattributed entries fall back to the primary account).
   const savingsOut = useMemo(
     () =>
       savingsOutflowByAccount(
-        sip.entries,
-        ef.entries,
+        entriesSinceMonth(sip.entries, start),
+        entriesSinceMonth(ef.entries, start),
         new Set(active.map((a) => a.id)),
         active[0]?.id,
       ),
-    [sip.entries, ef.entries, active],
+    [sip.entries, ef.entries, active, start],
   );
 
   const balances = useMemo(
-    () => accountBalances(active, transactions, savingsOut),
-    [active, transactions, savingsOut],
+    () => accountBalances(active, tracked, savingsOut),
+    [active, tracked, savingsOut],
   );
 
   return {
@@ -141,8 +150,16 @@ export function useCashBreakdown() {
   const { transactions } = useAllTransactions();
   const sip = useSip();
   const ef = useEmergencyFunds();
+  const { settings } = useSettings();
+  const start = settings.trackingStartDate;
   return useMemo(
-    () => portfolioBreakdown(active, transactions, sip.entries, ef.entries),
-    [active, transactions, sip.entries, ef.entries],
+    () =>
+      portfolioBreakdown(
+        active,
+        transactionsSince(transactions, start),
+        entriesSinceMonth(sip.entries, start),
+        entriesSinceMonth(ef.entries, start),
+      ),
+    [active, transactions, sip.entries, ef.entries, start],
   );
 }

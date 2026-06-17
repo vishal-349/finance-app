@@ -12,6 +12,8 @@ interface StatCardProps {
   accent?: "default" | "success" | "warning" | "destructive";
   /** When set, the whole card becomes a deep link to this route. */
   to?: string;
+  /** Shrinks the value text for tight, many-up grids (e.g. a 5-column row of large currency figures). */
+  dense?: boolean;
 }
 
 const ACCENT: Record<
@@ -40,7 +42,7 @@ const ACCENT: Record<
   },
 };
 
-export function StatCard({ label, value, icon: Icon, hint, accent = "default", to }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, hint, accent = "default", to, dense }: StatCardProps) {
   const a = ACCENT[accent];
   const inner = (
     <Card variant="glass" interactive className="group relative h-full overflow-hidden">
@@ -58,7 +60,7 @@ export function StatCard({ label, value, icon: Icon, hint, accent = "default", t
       <CardContent className="relative flex items-start justify-between gap-2 p-4">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
-          <p className={cn("mt-1.5 text-2xl font-bold tabular-nums tracking-tight", a.value)}>
+          <p className={cn("mt-1.5 font-bold tabular-nums tracking-tight", dense ? "text-xl" : "text-2xl", a.value)}>
             {value}
           </p>
           {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}

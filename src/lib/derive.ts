@@ -35,6 +35,36 @@ import {
  * ever persisted — call sites recompute on every render/refetch.
  */
 
+/**
+ * Tracking-start floor: keep only records on/after the user's tracking-start
+ * date. Pre-tracking entries (e.g. EMI installments backfilled before the user
+ * began tracking) are history/schedule only and must NOT affect cash, balances,
+ * or card outstanding. When `startISO` is unset, nothing is filtered (legacy
+ * behaviour — count everything). Date strings are ISO (`YYYY-MM-DD`), so a
+ * lexical compare is a chronological compare.
+ */
+export function transactionsSince<T extends { date: string }>(
+  records: T[],
+  startISO?: string,
+): T[] {
+  if (!startISO) return records;
+  return records.filter((r) => r.date >= startISO);
+}
+
+/**
+ * Month-keyed sibling of `transactionsSince` for SIP / emergency-fund entries,
+ * which are stamped with a `monthKey` (`YYYY-MM`) rather than a full date. The
+ * tracking-start month is included.
+ */
+export function entriesSinceMonth<T extends { monthKey: string }>(
+  entries: T[],
+  startISO?: string,
+): T[] {
+  if (!startISO) return entries;
+  const startMonth = startISO.slice(0, 7);
+  return entries.filter((e) => e.monthKey >= startMonth);
+}
+
 export function sumExpenses(transactions: Transaction[]): number {
   return transactions
     .filter((t) => t.type === "expense")

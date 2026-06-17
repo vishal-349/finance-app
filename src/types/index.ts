@@ -283,6 +283,14 @@ export interface UserSettings {
   theme: ThemePreference;
   /** 1-12, month the financial year starts (India default = 4 / April). */
   financialYearStartMonth: number;
+  /**
+   * `YYYY-MM-DD` the user began tracking. Transactions dated before this are
+   * treated as history/schedule only (e.g. EMI installments paid pre-tracking):
+   * they never reduce Net Cash, account balances, or card outstanding. Unset =
+   * no floor (count everything). `openingBalance` represents the position as of
+   * this date.
+   */
+  trackingStartDate?: string;
   /** An expense at or above this amount is classified as a "large expense". */
   largeExpenseThreshold: number;
   accentColor: AccentColor;

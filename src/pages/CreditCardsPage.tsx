@@ -25,7 +25,7 @@ import { TransactionList } from "@/features/transactions/TransactionList";
 import { useCardStats, useCreditCards } from "@/hooks/useCreditCards";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useSettings } from "@/hooks/useSettings";
-import { cardOutstanding, cardPayments } from "@/lib/derive";
+import { cardOutstanding, cardPayments, transactionsSince } from "@/lib/derive";
 import { formatPercent } from "@/lib/format";
 import { formatDisplayDate } from "@/lib/date";
 import { format, parseISO } from "date-fns";
@@ -92,7 +92,7 @@ export function CreditCardsPage() {
   const cards = useCreditCards();
   const { stats } = useCardStats();
   const { transactions } = useAllTransactions();
-  const { money } = useSettings();
+  const { money, settings } = useSettings();
   const [params, setParams] = useSearchParams();
 
   const [showArchived, setShowArchived] = useState(false);
@@ -101,10 +101,12 @@ export function CreditCardsPage() {
   const [confirmDelete, setConfirmDelete] = useState<CreditCard | null>(null);
   const [payBill, setPayBill] = useState<CreditCard | null>(null);
 
-  const outstandingById = useMemo(
-    () => new Map(cards.all.map((c) => [c.id, cardOutstanding(c.id, transactions)])),
-    [cards.all, transactions],
-  );
+  const outstandingById = useMemo(() => {
+    // Outstanding is a current liability — only count charges/payments within
+    // the tracking period, mirroring Net Cash.
+    const tracked = transactionsSince(transactions, settings.trackingStartDate);
+    return new Map(cards.all.map((c) => [c.id, cardOutstanding(c.id, tracked)]));
+  }, [cards.all, transactions, settings.trackingStartDate]);
   const statsById = useMemo(() => new Map(stats.map((s) => [s.card.id, s])), [stats]);
 
   // Selected card is driven by the URL (?card=) so dashboard widgets can deep-link.

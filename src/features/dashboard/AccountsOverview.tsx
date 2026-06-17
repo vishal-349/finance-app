@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown, Info, Wallet } from "lucide-react";
 import { useAccountBalances, useCashBreakdown } from "@/hooks/useAccounts";
 import { useSettings } from "@/hooks/useSettings";
+import { formatDisplayDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 /**
@@ -14,7 +15,7 @@ import { cn } from "@/lib/utils";
 export function AccountsOverview() {
   const { balances, total } = useAccountBalances();
   const breakdown = useCashBreakdown();
-  const { money } = useSettings();
+  const { money, settings } = useSettings();
   const [showCalc, setShowCalc] = useState(false);
 
   if (balances.length === 0) return null;
@@ -110,7 +111,14 @@ export function AccountsOverview() {
 
         {showCalc && (
           <dl className="mt-2 space-y-1.5 rounded-xl border border-white/15 bg-white/10 p-3 text-sm shadow-inner-top backdrop-blur-sm">
-            <CalcRow label="Opening balance" value={money(breakdown.opening)} />
+            <CalcRow
+              label={
+                settings.trackingStartDate
+                  ? `Opening balance (as of ${formatDisplayDate(settings.trackingStartDate)})`
+                  : "Opening balance"
+              }
+              value={money(breakdown.opening)}
+            />
             <CalcRow label="Income" value={`+ ${money(breakdown.income)}`} />
             {transfersNet !== 0 && (
               <CalcRow
@@ -133,6 +141,12 @@ export function AccountsOverview() {
               Card spend isn't subtracted until you pay the bill — it shows under Credit Cards as
               outstanding.
             </p>
+            {settings.trackingStartDate && (
+              <p className="text-[11px] text-primary-foreground/70">
+                Transactions before {formatDisplayDate(settings.trackingStartDate)} are excluded —
+                they count toward schedules/history only.
+              </p>
+            )}
           </dl>
         )}
       </div>

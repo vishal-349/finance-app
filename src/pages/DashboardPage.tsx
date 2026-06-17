@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, PiggyBank, Wallet } from "lucide-react";
+import { TrendingUp, TrendingDown, PiggyBank, Wallet, Banknote } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MonthPicker } from "@/components/shared/MonthPicker";
 import { StatCard } from "@/components/shared/StatCard";
@@ -9,6 +9,7 @@ import { SpendDonut } from "@/components/charts/SpendDonut";
 import { PlannedVsActual } from "@/features/dashboard/PlannedVsActual";
 import { ModuleWidgets } from "@/features/dashboard/ModuleWidgets";
 import { AccountsOverview } from "@/features/dashboard/AccountsOverview";
+import { AvailableAfterSettlement } from "@/features/dashboard/AvailableAfterSettlement";
 import { CategoryHistoryDialog } from "@/features/transactions/CategoryHistoryDialog";
 import { useMonth } from "@/hooks/useMonth";
 import { useMonthData } from "@/hooks/useMonthData";
@@ -32,19 +33,26 @@ export function DashboardPage() {
       />
 
       <DataState isLoading={isLoading} isError={isError} error={error} onRetry={refetch}>
-        {/* Truthful cash position — leads the page */}
-        <AccountsOverview />
+        {/* Truthful cash position — leads the page, with the post-settlement
+            figure sitting right beside it. */}
+        <div className="grid items-stretch gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <AccountsOverview />
+          </div>
+          <AvailableAfterSettlement />
+        </div>
 
         {/* This month's flow: where income went. Each card drills down. */}
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground">This month</h2>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <StatCard
               label="Income"
               value={money(summary.income)}
               icon={TrendingUp}
               accent="success"
               to="/income"
+              dense
             />
             <StatCard
               label="Spending"
@@ -57,6 +65,7 @@ export function DashboardPage() {
                   : "No budget set"
               }
               accent={summary.budgetUtilization > 1 ? "destructive" : "default"}
+              dense
             />
             <StatCard
               label="Saved & invested"
@@ -65,6 +74,15 @@ export function DashboardPage() {
               to="/goals"
               hint="Goals + Emergency + SIP"
               accent="success"
+              dense
+            />
+            <StatCard
+              label="Total Outflow"
+              value={money(summary.actualExpenses + summary.savedAndInvested)}
+              icon={Banknote}
+              to="/transactions"
+              hint="Spending + Saved & invested"
+              dense
             />
             <StatCard
               label="Left this month"
@@ -73,6 +91,7 @@ export function DashboardPage() {
               to="/reports"
               hint={`${formatPercent(summary.savingsRate)} savings rate`}
               accent={summary.remainingBalance < 0 ? "destructive" : "default"}
+              dense
             />
           </div>
         </section>

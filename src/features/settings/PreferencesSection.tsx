@@ -137,6 +137,21 @@ export function PreferencesSection() {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="tracking-start">Tracking start date</Label>
+          <Input
+            id="tracking-start"
+            type="date"
+            value={settings.trackingStartDate ?? ""}
+            onChange={(e) => save({ trackingStartDate: e.target.value }, "Tracking start date")}
+          />
+          <p className="text-xs text-muted-foreground">
+            When you began tracking. Transactions before this date (e.g. pre-existing
+            EMI installments) count toward schedules and history but never reduce Net
+            Cash, balances, or card dues. Leave empty to count everything.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
