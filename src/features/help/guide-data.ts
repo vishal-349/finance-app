@@ -114,21 +114,24 @@ export const GUIDE: GuideSection[] = [
       "Your month at a glance — every figure is derived live from your transactions, nothing is typed in here.",
     features: [
       {
-        title: "Net cash hero panel",
-        where: "Gradient panel at the top of the Dashboard",
+        title: "Net cash & Available After Card Settlement",
+        where: "Gradient panel at the top, with a companion card beside it",
         steps: [
-          "Shows your true total liquid cash across all accounts, with each account broken out.",
-          "Reflects everything that moved your cash — income, spending, transfers, bill payments, and money set aside to Goals/SIP/Emergency Fund.",
+          "Net cash = your true total liquid cash across all accounts, each account broken out.",
+          "Reflects everything that moved your cash — income, spending, transfers, bill payments, and money set aside to Goals/SIP/Emergency Fund. Card spend isn't subtracted until you pay the bill.",
+          "“How is this calculated?” expands a full breakdown (opening balance + in − out − saved).",
+          "Available After Card Settlement = Net cash − all current credit-card dues; it goes red if dues exceed your cash.",
           "Click the arrow to jump to the Accounts page.",
         ],
-        tip: "Hidden until you add at least one account.",
+        tip: "Set a “Tracking start date” in Settings → Preferences so pre-tracking transactions don't reduce Net cash.",
       },
       {
         title: "“This month” cash-flow cards",
-        where: "Four cards below the Net cash panel — each is clickable",
+        where: "Five cards below the Net cash panel — each is clickable",
         steps: [
           "Income → opens Income. Spending → opens Transactions (with budget-used %).",
           "Saved & invested = Goals + Emergency Fund + SIP set aside this month → opens Goals.",
+          "Total Outflow = Spending + Saved & invested — what actually left you this month.",
           "Left this month = Income − Spending − Saved/invested, with your savings rate → opens Reports.",
           "Click any card to drill into the underlying records.",
         ],
@@ -139,9 +142,9 @@ export const GUIDE: GuideSection[] = [
         where: "Row of four cards: Large Expenses, EMI Burden, Card Spend, EMI vs Non-EMI",
         steps: [
           "Large Expenses: total + count above your threshold this month.",
-          "EMI Burden: this month's installment total, active EMI count, and the next 3 due dates.",
+          "EMI Burden: this month's installment total, how many EMIs fall in the month, and their dates (paid ones show a ✓). Loans that start a later month aren't counted.",
           "Card Spend: total credit-card spend with per-card utilisation bars (green/amber/red).",
-          "EMI vs Non-EMI: split of this month's expenses. Click any widget's arrow to open its full page.",
+          "EMI vs Non-EMI: split of this month's expenses — counts both EMI-module payments and expenses in categories named “EMI…”. Click any widget's arrow to open its full page.",
         ],
       },
       {
@@ -181,7 +184,7 @@ export const GUIDE: GuideSection[] = [
           "Add an expense and choose a credit card as the source.",
           "Switch to the “Convert to EMI” tab.",
           "Enter the tenure in months; the monthly amount auto-fills (total ÷ months) and is editable.",
-          "Save to create an EMI plan that records each installment automatically.",
+          "Save to create an EMI plan on the EMIs page — then mark each instalment paid there as you pay it.",
         ],
         tip: "Only offered when creating a new card expense, not when editing one.",
       },
@@ -325,7 +328,7 @@ export const GUIDE: GuideSection[] = [
         title: "Account stats",
         where: "Cards at the top of the page",
         steps: ["See Net cash, number of accounts, and money In / Out this calendar month."],
-        tip: "Net cash now reflects money moved to Goals, SIP and Emergency Fund — those leave your account.",
+        tip: "Net cash reflects money moved to Goals, SIP and Emergency Fund — those leave your account. Only transactions on/after your tracking-start date (Settings → Preferences) count toward balances.",
       },
     ],
   },
@@ -417,42 +420,54 @@ export const GUIDE: GuideSection[] = [
     icon: Landmark,
     to: "/emis",
     location: "Sidebar → EMIs",
-    summary: "Installment plans that record each monthly payment for you, with pause/stop controls.",
+    summary:
+      "The single source of truth for loans & instalments: plan a schedule, then mark each instalment paid as you pay it. Nothing is auto-recorded.",
     features: [
       {
-        title: "Add an EMI",
+        title: "Add an EMI plan",
         where: "“Add EMI” button",
         steps: [
           "Click “Add EMI” and name it (e.g. “iPhone EMI”).",
           "Choose a type (Credit Card EMI, Personal/Car/Home Loan, or Custom).",
           "Enter the monthly amount, start date and number of months.",
-          "Optionally set a category and funding source, then save.",
+          "Optionally set a category and funding source (an account or card), then save.",
         ],
-        tip: "If the start date is in the past, earlier installments are backfilled automatically.",
+        tip: "This creates a schedule only — no transactions yet. You record each instalment as you pay it.",
       },
       {
-        title: "Edit, pause/resume, stop or delete",
+        title: "Record a payment (Mark Paid)",
+        where: "“Record payment” button on an EMI card, or click a date in the Calendar",
+        steps: [
+          "Click “Record payment” (it targets the next unpaid instalment), or open the Calendar and click any instalment.",
+          "In the dialog, confirm or change the payment date, amount and funding source (all pre-filled from the plan).",
+          "Save — this creates an EMI-tagged expense that flows into Net cash, Spending, budgets, the monthly summary and the EMI-vs-Non-EMI split automatically.",
+          "To edit or undo, open a paid instalment again and change it or choose “Remove payment”.",
+        ],
+        tip: "Behind on a few? Click “Mark N past-due paid” on the card to record every overdue instalment in one tap.",
+      },
+      {
+        title: "Edit, pause/resume, stop or delete a plan",
         where: "Icon buttons on each EMI card (Active tab)",
         steps: [
           "Pencil edits the plan; end date is recalculated from start + months.",
-          "Pause/resume temporarily halts or restarts new installments.",
-          "Stop ends it permanently (moves to Completed as “Stopped”); Delete removes the plan.",
-          "Either way, installments already recorded are kept.",
+          "Pause/resume hides or restores the plan's expected payments.",
+          "Stop moves it to Completed and stops expecting payments; Delete removes the plan.",
+          "Either way, instalment payments you've already recorded are kept as transactions.",
         ],
       },
       {
-        title: "Active progress, Completed & Calendar tabs",
+        title: "Progress, due badge, Completed & Calendar tabs",
         where: "Tabs on the EMIs page",
         steps: [
-          "Active: progress bar of installments paid, remaining amount and next due date.",
+          "Active: progress bar of instalments paid (from your recorded payments), remaining amount, next due date, and a “N due” badge for overdue-but-unrecorded instalments.",
           "Completed: fully-paid or stopped plans for reference.",
-          "Calendar: a month grid of upcoming installment due dates — navigate with the arrows.",
+          "Calendar: a month grid showing each instalment as paid ✓ / due / upcoming — click any date to record or edit its payment.",
         ],
       },
       {
         title: "EMI stats",
         where: "Cards at the top",
-        steps: ["Monthly burden, active count, total remaining, and the next payment due."],
+        steps: ["Monthly burden (instalments due this month), active count, total remaining, and the next payment due."],
       },
     ],
   },
@@ -564,6 +579,7 @@ export const GUIDE: GuideSection[] = [
         steps: [
           "Pause/resume temporarily stops or restarts renewals.",
           "Cancel marks it cancelled (kept for history); Delete removes it entirely.",
+          "Once cancelled, only Edit and Delete remain — the pause and cancel buttons disappear.",
         ],
       },
       {
@@ -734,7 +750,9 @@ export const GUIDE: GuideSection[] = [
         steps: [
           "Set your currency, theme (Light/Dark/System).",
           "Set the large-expense threshold and the financial-year start month.",
+          "Set a Tracking start date — the day you began tracking.",
         ],
+        tip: "Transactions dated before your tracking-start date count toward EMI schedules and history but never reduce Net cash, account balances or card dues. Leave it empty to count everything.",
       },
       {
         title: "Export & backup your data",
