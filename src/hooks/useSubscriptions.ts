@@ -10,6 +10,7 @@ import {
   updateSubscription,
   type SubscriptionInput,
 } from "@/services/subscriptions";
+import { runRecurringEngine } from "@/services/recurringEngine";
 import { subscriptionAnalytics } from "@/lib/derive";
 import { todayISODate } from "@/lib/date";
 import { queryKeys } from "@/lib/queryClient";
@@ -19,7 +20,17 @@ export function useSubscriptions() {
   const uid = useUid();
   const qc = useQueryClient();
   const key = queryKeys.subscriptions(uid);
-  const invalidate = () => qc.invalidateQueries({ queryKey: key });
+  const invalidateAll = async () => {
+    await qc.invalidateQueries({ queryKey: key });
+    await qc.invalidateQueries({ queryKey: ["transactions", uid] });
+  };
+  // Auto-renewing subs materialise charges via the engine. Run it right after a
+  // create/edit so a due renewal (e.g. one dated today) appears immediately —
+  // without waiting for the next app load. Mirrors recurring rules.
+  const generateNow = async () => {
+    await runRecurringEngine(uid);
+    await invalidateAll();
+  };
 
   const query = useQuery({ queryKey: key, queryFn: () => listSubscriptions(uid) });
   const all = query.data ?? [];
@@ -27,28 +38,28 @@ export function useSubscriptions() {
 
   const create = useMutation({
     mutationFn: (input: SubscriptionInput) => createSubscription(uid, input),
-    onSuccess: invalidate,
+    onSuccess: generateNow,
   });
   const update = useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: Partial<SubscriptionInput> }) =>
       updateSubscription(uid, id, patch),
-    onSuccess: invalidate,
+    onSuccess: generateNow,
   });
   const pause = useMutation({
     mutationFn: (id: string) => pauseSubscription(uid, id),
-    onSuccess: invalidate,
+    onSuccess: invalidateAll,
   });
   const resume = useMutation({
     mutationFn: (id: string) => resumeSubscription(uid, id),
-    onSuccess: invalidate,
+    onSuccess: generateNow,
   });
   const cancel = useMutation({
     mutationFn: (id: string) => cancelSubscription(uid, id),
-    onSuccess: invalidate,
+    onSuccess: invalidateAll,
   });
   const remove = useMutation({
     mutationFn: (id: string) => deleteSubscription(uid, id),
-    onSuccess: invalidate,
+    onSuccess: invalidateAll,
   });
 
   return { ...query, all, active, create, update, pause, resume, cancel, remove };
