@@ -31,6 +31,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useCategoryMap } from "@/hooks/useCategories";
 import { useSettings } from "@/hooks/useSettings";
 import {
+  emiCategoryIdSet,
   filterLargeExpenses,
   isEmiTransaction,
   largeExpenseSummary,
@@ -93,12 +94,13 @@ function expenseTotalsByCategory(
 function emiSplitByMonth(
   transactions: Transaction[],
   year: number,
+  emiCategoryIds?: Set<string>,
 ): { label: string; emi: number; nonEmi: number }[] {
   const emi = new Map<string, number>();
   const nonEmi = new Map<string, number>();
   for (const t of transactions) {
     if (t.type !== "expense") continue;
-    const target = isEmiTransaction(t) ? emi : nonEmi;
+    const target = isEmiTransaction(t, emiCategoryIds) ? emi : nonEmi;
     target.set(t.monthKey, (target.get(t.monthKey) ?? 0) + t.amount);
   }
   return monthKeysForYear(year).map((k) => ({
@@ -239,6 +241,10 @@ export function InsightsTab() {
   const threshold = settings.largeExpenseThreshold;
 
   const transactions = useMemo(() => query.data ?? [], [query.data]);
+  const emiCategoryIds = useMemo(
+    () => emiCategoryIdSet([...categoryMap.values()]),
+    [categoryMap],
+  );
 
   const monthlyTotals = useMemo(
     () => monthlyExpenseTotals(transactions, year),
@@ -248,10 +254,13 @@ export function InsightsTab() {
     () => expenseTotalsByCategory(transactions),
     [transactions],
   );
-  const split = useMemo(() => splitEmiExpenses(transactions), [transactions]);
+  const split = useMemo(
+    () => splitEmiExpenses(transactions, emiCategoryIds),
+    [transactions, emiCategoryIds],
+  );
   const emiMonthly = useMemo(
-    () => emiSplitByMonth(transactions, year),
-    [transactions, year],
+    () => emiSplitByMonth(transactions, year, emiCategoryIds),
+    [transactions, year, emiCategoryIds],
   );
   const largeSummary = useMemo(
     () => largeExpenseSummary(transactions, threshold),

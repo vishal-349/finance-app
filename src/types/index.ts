@@ -322,15 +322,33 @@ export interface CategorySummary {
   safeDailySpend: number | null;
 }
 
-/** Derived (never stored) progress of one EMI as of "today". */
+/** One installment slot of an EMI plan and whether it's been recorded paid. */
+export interface EmiInstallment {
+  /** 0-based installment index. */
+  index: number;
+  /** Scheduled occurrence date `YYYY-MM-DD` — identifies the slot. */
+  scheduledDate: string;
+  /** paid = recorded; due = elapsed but unrecorded; upcoming = future. */
+  status: "paid" | "due" | "upcoming";
+  /** When paid: the actual payment date/amount recorded. */
+  paidDate?: string;
+  paidAmount?: number;
+}
+
+/**
+ * Derived (never stored) progress of one EMI as of "today". Paid counts come
+ * from actually-recorded installment transactions, not the elapsed schedule.
+ */
 export interface EmiProgress {
   emi: Emi;
   paidInstallments: number;
   remainingInstallments: number;
+  /** Elapsed installments not yet recorded paid (overdue to mark). */
+  dueInstallments: number;
   paidAmount: number;
   remainingAmount: number;
   totalAmount: number;
-  /** Next installment date, or null when completed/stopped. */
+  /** Next unrecorded installment date, or null when completed/stopped. */
   nextPaymentDate: string | null;
   isCompleted: boolean;
 }

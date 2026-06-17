@@ -134,9 +134,8 @@ export function EmiForm({ open, onOpenChange, editing }: Props) {
         <DialogHeader>
           <DialogTitle>{editing ? "Edit EMI" : "Add EMI"}</DialogTitle>
           <DialogDescription>
-            Plan an installment schedule. Monthly installments are recorded
-            automatically — past installments since the start date are
-            backfilled for you.
+            Plan an installment schedule. You'll mark each installment paid as
+            you pay it — that records the expense and updates progress.
           </DialogDescription>
         </DialogHeader>
 

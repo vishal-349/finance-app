@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   CalendarClock,
+  CheckCircle2,
   Landmark,
   Pause,
   Pencil,
@@ -23,13 +24,14 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmiForm, EMI_TYPE_LABELS } from "@/features/emis/EmiForm";
 import { EmiCalendar } from "@/features/emis/EmiCalendar";
+import { MarkEmiPaidDialog } from "@/features/emis/MarkEmiPaidDialog";
 import { useEmis } from "@/hooks/useEmis";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useSettings } from "@/hooks/useSettings";
 import { emiMonthlyBurden } from "@/lib/derive";
 import { currentMonthKey, formatDisplayDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
-import type { Emi, EmiProgress } from "@/types";
+import type { Emi, EmiInstallment, EmiProgress } from "@/types";
 
 export function EmisPage() {
   const {
@@ -45,6 +47,8 @@ export function EmisPage() {
     resume,
     stop,
     remove,
+    installmentsFor,
+    markAllPastDue,
   } = useEmis();
   const { all: cards } = useCreditCards();
   const { money } = useSettings();
@@ -53,6 +57,24 @@ export function EmisPage() {
   const [editing, setEditing] = useState<Emi | null>(null);
   const [confirmStop, setConfirmStop] = useState<Emi | null>(null);
   const [confirmDel, setConfirmDel] = useState<Emi | null>(null);
+  const [payTarget, setPayTarget] = useState<{ emi: Emi; installment: EmiInstallment } | null>(
+    null,
+  );
+
+  const recordPayment = (emi: Emi) => {
+    const slots = installmentsFor(emi);
+    const next = slots.find((i) => i.status !== "paid") ?? slots[slots.length - 1];
+    if (next) setPayTarget({ emi, installment: next });
+  };
+
+  const catchUp = async (emi: Emi) => {
+    try {
+      const n = await markAllPastDue.mutateAsync(emi);
+      toast.success(`${n} past-due installment${n === 1 ? "" : "s"} marked paid`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to mark installments");
+    }
+  };
 
   // Deep-link target: dashboard widgets link to /emis?focus=<id>.
   const [params] = useSearchParams();
@@ -147,7 +169,7 @@ export function EmisPage() {
             isEmpty={activeEmis.length === 0}
             emptyIcon={<Landmark className="h-10 w-10 text-muted-foreground" />}
             emptyTitle="No active EMIs"
-            emptyMessage="Add an EMI plan to start tracking installments automatically."
+            emptyMessage="Add an EMI plan, then mark each installment paid as you pay it."
             emptyAction={
               <Button onClick={openAdd}>
                 <Plus className="h-4 w-4" /> Add EMI
@@ -198,9 +220,14 @@ export function EmisPage() {
                       />
 
                       <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                        <span className="tabular-nums">
+                        <span className="flex items-center gap-2 tabular-nums">
                           {p.paidInstallments} of {p.emi.months} installments ·{" "}
                           {money(p.remainingAmount)} remaining
+                          {p.dueInstallments > 0 && (
+                            <Badge variant="warning">
+                              {p.dueInstallments} due
+                            </Badge>
+                          )}
                         </span>
                         {p.nextPaymentDate && (
                           <span>
@@ -209,7 +236,28 @@ export function EmisPage() {
                         )}
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-end gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {!isPaused && (
+                          <Button
+                            size="sm"
+                            className="h-8"
+                            onClick={() => recordPayment(p.emi)}
+                          >
+                            <CheckCircle2 className="h-4 w-4" /> Record payment
+                          </Button>
+                        )}
+                        {p.dueInstallments > 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            disabled={markAllPastDue.isPending}
+                            onClick={() => catchUp(p.emi)}
+                          >
+                            Mark {p.dueInstallments} past-due paid
+                          </Button>
+                        )}
+                        <div className="ml-auto flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -254,6 +302,7 @@ export function EmisPage() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -312,18 +361,29 @@ export function EmisPage() {
               </Button>
             }
           >
-            <EmiCalendar progress={progress} />
+            <EmiCalendar
+              progress={progress}
+              installmentsFor={installmentsFor}
+              onSelectInstallment={(emi, installment) => setPayTarget({ emi, installment })}
+            />
           </DataState>
         </TabsContent>
       </Tabs>
 
       <EmiForm open={formOpen} onOpenChange={setFormOpen} editing={editing} />
 
+      <MarkEmiPaidDialog
+        open={!!payTarget}
+        onOpenChange={(o) => !o && setPayTarget(null)}
+        emi={payTarget?.emi ?? null}
+        installment={payTarget?.installment ?? null}
+      />
+
       <ConfirmDialog
         open={!!confirmStop}
         onOpenChange={(o) => !o && setConfirmStop(null)}
         title="Stop this EMI?"
-        description="No future installments will be generated. Past installment history is kept."
+        description="It moves to Completed and no longer expects payments. Recorded installments are kept."
         confirmLabel="Stop EMI"
         onConfirm={async () => {
           if (!confirmStop) return;
@@ -341,7 +401,7 @@ export function EmisPage() {
         open={!!confirmDel}
         onOpenChange={(o) => !o && setConfirmDel(null)}
         title="Delete this EMI?"
-        description="This removes the EMI plan. Installment transactions already generated are kept."
+        description="This removes the EMI plan. Installment payments you've recorded are kept as transactions."
         confirmLabel="Delete"
         destructive
         onConfirm={async () => {

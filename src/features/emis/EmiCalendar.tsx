@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { getDay, getDaysInMonth, startOfMonth } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSettings } from "@/hooks/useSettings";
@@ -16,7 +17,7 @@ import {
   todayISO,
 } from "@/lib/date";
 import { cn } from "@/lib/utils";
-import type { Emi, EmiProgress } from "@/types";
+import type { Emi, EmiInstallment, EmiProgress } from "@/types";
 
 const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
@@ -25,7 +26,13 @@ interface MonthInstallment {
   date: string;
 }
 
-export function EmiCalendar({ progress }: { progress: EmiProgress[] }) {
+interface Props {
+  progress: EmiProgress[];
+  installmentsFor: (emi: Emi) => EmiInstallment[];
+  onSelectInstallment: (emi: Emi, installment: EmiInstallment) => void;
+}
+
+export function EmiCalendar({ progress, installmentsFor, onSelectInstallment }: Props) {
   const { money } = useSettings();
   const [monthKey, setMonthKey] = useState(currentMonthKey());
   const today = todayISO();
@@ -145,22 +152,38 @@ export function EmiCalendar({ progress }: { progress: EmiProgress[] }) {
           </p>
         ) : (
           <div className="divide-y rounded-lg border">
-            {installments.map((it) => (
-              <div
-                key={`${it.emi.id}-${it.date}`}
-                className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{it.emi.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDisplayDate(it.date)}
-                  </p>
-                </div>
-                <span className="shrink-0 font-semibold tabular-nums">
-                  {money(it.emi.monthlyAmount)}
-                </span>
-              </div>
-            ))}
+            {installments.map((it) => {
+              const slot = installmentsFor(it.emi).find(
+                (i) => i.scheduledDate === it.date,
+              );
+              const status = slot?.status ?? "upcoming";
+              return (
+                <button
+                  type="button"
+                  key={`${it.emi.id}-${it.date}`}
+                  onClick={() => slot && onSelectInstallment(it.emi, slot)}
+                  className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    {status === "paid" && (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{it.emi.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDisplayDate(it.date)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {status === "due" && <Badge variant="warning">Due</Badge>}
+                    <span className="font-semibold tabular-nums">
+                      {money(slot?.paidAmount ?? it.emi.monthlyAmount)}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

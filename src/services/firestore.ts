@@ -1,8 +1,10 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
@@ -75,6 +77,30 @@ export async function deleteDocById(
   id: string,
 ): Promise<void> {
   await deleteDoc(doc(db, "users", uid, name, id));
+}
+
+/**
+ * Upsert a doc at a caller-chosen id (deterministic-id writes, e.g. one EMI
+ * installment slot → one transaction). Idempotent: re-marking the same slot
+ * overwrites rather than duplicating. Stamps `createdAt` only on first write.
+ */
+export async function setDocById<T extends BaseDoc>(
+  uid: string,
+  name: string,
+  id: string,
+  data: Omit<T, "id" | "createdAt" | "updatedAt">,
+): Promise<void> {
+  const ref = doc(db, "users", uid, name, id);
+  const existed = (await getDoc(ref)).exists();
+  await setDoc(
+    ref,
+    {
+      ...data,
+      ...(existed ? {} : { createdAt: serverTimestamp() }),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
 }
 
 /** Collection names — single source of truth to avoid string typos. */

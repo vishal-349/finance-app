@@ -1,19 +1,29 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, CalendarClock, CreditCard as CreditCardIcon, Flame, Landmark } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  CheckCircle2,
+  CreditCard as CreditCardIcon,
+  Flame,
+  Landmark,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UtilizationBar } from "@/components/shared/UtilizationBar";
+import { useMemo } from "react";
 import { useSettings } from "@/hooks/useSettings";
 import { useEmis } from "@/hooks/useEmis";
 import { useCardStats } from "@/hooks/useCreditCards";
+import { useCategoryMap } from "@/hooks/useCategories";
 import {
-  emiMonthlyBurden,
+  emiActiveInMonth,
+  emiCategoryIdSet,
   largeExpenseSummary,
   splitEmiExpenses,
 } from "@/lib/derive";
 import { formatDisplayDate } from "@/lib/date";
 import { formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { MonthKey, Transaction } from "@/types";
+import type { Emi, EmiInstallment, MonthKey, Transaction } from "@/types";
 
 /**
  * Dashboard module widgets: Large Expenses, EMI burden + upcoming payments,
@@ -28,17 +38,29 @@ export function ModuleWidgets({
   transactions: Transaction[];
 }) {
   const { settings, money } = useSettings();
-  const { all: emis, activeEmis } = useEmis();
+  const { all: emis, installmentsFor } = useEmis();
   const { stats: cardStats } = useCardStats();
+  const categoryMap = useCategoryMap();
+  const emiCategoryIds = useMemo(
+    () => emiCategoryIdSet([...categoryMap.values()]),
+    [categoryMap],
+  );
 
   const large = largeExpenseSummary(transactions, settings.largeExpenseThreshold);
-  const emiBurden = emiMonthlyBurden(emis, monthKey);
-  const upcoming = activeEmis
-    .filter((p) => p.nextPaymentDate)
-    .sort((a, b) => (a.nextPaymentDate! < b.nextPaymentDate! ? -1 : 1))
-    .slice(0, 3);
+  // Only EMIs with an installment in the selected month — so the count and the
+  // listed dates always agree with the burden amount (a loan that starts a
+  // later month is excluded from "this month").
+  const dueThisMonth = emis
+    .filter((e) => e.status !== "stopped" && emiActiveInMonth(e, monthKey))
+    .map((e) => ({
+      emi: e,
+      slot: installmentsFor(e).find((i) => i.scheduledDate.slice(0, 7) === monthKey),
+    }))
+    .filter((x): x is { emi: Emi; slot: EmiInstallment } => !!x.slot)
+    .sort((a, b) => (a.slot.scheduledDate < b.slot.scheduledDate ? -1 : 1));
+  const emiBurden = dueThisMonth.reduce((a, x) => a + x.emi.monthlyAmount, 0);
   const totalCardSpend = cardStats.reduce((a, s) => a + s.monthSpend, 0);
-  const split = splitEmiExpenses(transactions);
+  const split = splitEmiExpenses(transactions, emiCategoryIds);
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -54,18 +76,22 @@ export function ModuleWidgets({
       <WidgetCard title="EMI Burden" icon={<Landmark className="h-4 w-4" />} to="/emis">
         <p className="text-xl font-bold tabular-nums">{money(emiBurden)}</p>
         <p className="text-xs text-muted-foreground">
-          {activeEmis.length} active {activeEmis.length === 1 ? "EMI" : "EMIs"} this month
+          {dueThisMonth.length} {dueThisMonth.length === 1 ? "EMI" : "EMIs"} this month
         </p>
-        {upcoming.length > 0 && (
+        {dueThisMonth.length > 0 && (
           <ul className="mt-2 space-y-1 border-t pt-2">
-            {upcoming.map((p) => (
-              <DrillRow key={p.emi.id} to={`/emis?focus=${p.emi.id}`}>
+            {dueThisMonth.slice(0, 3).map(({ emi, slot }) => (
+              <DrillRow key={emi.id} to={`/emis?focus=${emi.id}`}>
                 <span className="flex min-w-0 items-center gap-1 text-muted-foreground">
-                  <CalendarClock className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{p.emi.name}</span>
+                  {slot.status === "paid" ? (
+                    <CheckCircle2 className="h-3 w-3 shrink-0 text-success" />
+                  ) : (
+                    <CalendarClock className="h-3 w-3 shrink-0" />
+                  )}
+                  <span className="truncate">{emi.name}</span>
                 </span>
                 <span className="shrink-0 tabular-nums">
-                  {formatDisplayDate(p.nextPaymentDate!)}
+                  {formatDisplayDate(slot.scheduledDate)}
                 </span>
               </DrillRow>
             ))}
