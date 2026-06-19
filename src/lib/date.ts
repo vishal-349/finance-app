@@ -115,6 +115,18 @@ export function occurrenceAt(
 export const todayISODate = (): string => format(new Date(), "yyyy-MM-dd");
 
 /**
+ * Format a Firestore Timestamp (or Date) as `DD/MM/YY, HH:MM AM/PM`
+ * (e.g. `19/06/26, 10:45 PM`). Returns "—" when null/unset.
+ */
+export function formatTimestamp(
+  value: Date | { toDate: () => Date } | null | undefined,
+): string {
+  if (!value) return "—";
+  const d = value instanceof Date ? value : value.toDate();
+  return format(d, "dd/MM/yy, hh:mm a");
+}
+
+/**
  * A credit card's current statement cycle as of `todayISO`.
  * The cycle runs from the day AFTER the previous statement date through the
  * next statement date (billing days are clamped into short months).

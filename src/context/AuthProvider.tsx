@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 import { ensureUserDoc } from "@/services/settings";
+import { setActor } from "@/services/activityLog";
 import { seedDefaultData } from "@/services/seed";
 import { listCategories } from "@/services/categories";
 import { AuthContext } from "./auth-context";
@@ -84,6 +85,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // best-effort side effect that must not gate navigation.
       setUser(firebaseUser);
       setLoading(false);
+      // Stamp the activity-log actor (future-ready for multi-user).
+      setActor(
+        firebaseUser
+          ? { uid: firebaseUser.uid, name: firebaseUser.displayName ?? firebaseUser.email ?? undefined }
+          : null,
+      );
       if (firebaseUser) void provisionUser(firebaseUser);
     });
   }, []);

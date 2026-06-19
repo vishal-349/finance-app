@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, PiggyBank, Wallet, Banknote } from "lucide-react";
+import { TrendingUp, TrendingDown, PiggyBank, Wallet, Banknote, History } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MonthPicker } from "@/components/shared/MonthPicker";
 import { StatCard } from "@/components/shared/StatCard";
@@ -10,11 +10,14 @@ import { PlannedVsActual } from "@/features/dashboard/PlannedVsActual";
 import { ModuleWidgets } from "@/features/dashboard/ModuleWidgets";
 import { AccountsOverview } from "@/features/dashboard/AccountsOverview";
 import { AvailableAfterSettlement } from "@/features/dashboard/AvailableAfterSettlement";
+import { ActivityHistoryDialog } from "@/features/dashboard/ActivityHistoryDialog";
 import { CategoryHistoryDialog } from "@/features/transactions/CategoryHistoryDialog";
 import { useMonth } from "@/hooks/useMonth";
 import { useMonthData } from "@/hooks/useMonthData";
+import { useActivityLog } from "@/hooks/useActivityLog";
 import { useSettings } from "@/hooks/useSettings";
 import { formatPercent } from "@/lib/format";
+import { formatTimestamp } from "@/lib/date";
 import type { CategorySummary } from "@/types";
 
 export function DashboardPage() {
@@ -22,7 +25,9 @@ export function DashboardPage() {
   const { summary, categorySummaries, transactions, isLoading, isError, error, refetch } =
     useMonthData(monthKey);
   const { money, settings } = useSettings();
+  const { lastUpdatedAt } = useActivityLog(50);
   const [history, setHistory] = useState<CategorySummary | null>(null);
+  const [activityOpen, setActivityOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -31,6 +36,17 @@ export function DashboardPage() {
         description="Your month at a glance — every figure derived from your transactions."
         actions={<MonthPicker />}
       />
+
+      {lastUpdatedAt && (
+        <button
+          type="button"
+          onClick={() => setActivityOpen(true)}
+          className="-mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <History className="h-3.5 w-3.5" />
+          Last updated: <span className="tabular-nums">{formatTimestamp(lastUpdatedAt)}</span>
+        </button>
+      )}
 
       <DataState isLoading={isLoading} isError={isError} error={error} onRetry={refetch}>
         {/* Truthful cash position — leads the page, with the post-settlement
@@ -135,6 +151,8 @@ export function DashboardPage() {
         categoryId={history?.category.id ?? null}
         categoryName={history?.category.name ?? ""}
       />
+
+      <ActivityHistoryDialog open={activityOpen} onOpenChange={setActivityOpen} />
     </div>
   );
 }

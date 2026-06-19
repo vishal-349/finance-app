@@ -1,4 +1,4 @@
-import { QueryClient, QueryCache } from "@tanstack/react-query";
+import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 
 export const queryClient = new QueryClient({
   // Log every query failure with full detail (code + message) so Firestore
@@ -8,6 +8,14 @@ export const queryClient = new QueryClient({
     onError: (error, query) => {
       // eslint-disable-next-line no-console
       console.error("[query] failed:", query.queryKey, error);
+    },
+  }),
+  // Any successful mutation may have appended an activity-log entry (added via
+  // the Firestore helpers). Refresh the log/"Last updated" everywhere from one
+  // place — prefix match invalidates all `["activityLog", uid]` queries.
+  mutationCache: new MutationCache({
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["activityLog"] });
     },
   }),
   defaultOptions: {
@@ -46,4 +54,5 @@ export const queryKeys = {
   accounts: (uid: string) => ["accounts", uid] as const,
   savingsGoals: (uid: string) => ["savingsGoals", uid] as const,
   subscriptions: (uid: string) => ["subscriptions", uid] as const,
+  activityLog: (uid: string) => ["activityLog", uid] as const,
 };

@@ -56,6 +56,44 @@ export interface BaseDoc {
   updatedAt: Timestamp | null;
 }
 
+/* ---- Activity log (audit trail) ---- */
+
+export type ActivityAction = "add" | "update" | "delete";
+
+/** One field that changed in an update, for prev → new display. */
+export interface ActivityChange {
+  field: string;
+  from: unknown;
+  to: unknown;
+}
+
+/**
+ * An audit-trail entry recorded whenever a money record is added, updated or
+ * deleted. Written as a fire-and-forget side effect of the generic Firestore
+ * helpers; never blocks the underlying write.
+ */
+export interface ActivityLog extends BaseDoc {
+  action: ActivityAction;
+  /** Firestore collection the record lives in (e.g. "transactions"). */
+  collection: string;
+  /** Human module label (e.g. "Expense", "Budget", "Subscription"). */
+  module: string;
+  /** Affected record id (empty for auto-id creates we couldn't capture). */
+  recordId: string;
+  /** Best-effort human label for the record (merchant / name / service…). */
+  label?: string;
+  /** Optional category id, resolved to a name at render time. */
+  categoryId?: string;
+  amount?: number;
+  /** Changed fields for updates. */
+  changes?: ActivityChange[];
+  /** Who performed it — future-ready for multi-user. */
+  actorUid: string;
+  actorName?: string;
+  /** When it happened (serverTimestamp). */
+  at: Timestamp | null;
+}
+
 export interface Category extends BaseDoc {
   name: string;
   type: CategoryType;
