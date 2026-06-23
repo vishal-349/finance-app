@@ -50,11 +50,11 @@ export function IncomePinDialog({ open, onOpenChange, expectedPin, onSuccess }: 
         </DialogHeader>
 
         <div className="space-y-1.5">
-          <Label htmlFor="income-pin" className="sr-only">
+          <Label htmlFor="income-pin-entry" className="sr-only">
             Income PIN
           </Label>
           <Input
-            id="income-pin"
+            id="income-pin-entry"
             type="password"
             inputMode="text"
             autoFocus

@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMonth } from "@/hooks/useMonth";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useIncomeSourceMap } from "@/hooks/useIncomeSources";
-import { useSettings } from "@/hooks/useSettings";
 import { sumIncome } from "@/lib/derive";
 import { TransactionForm } from "@/features/transactions/TransactionForm";
 import { TransactionList } from "@/features/transactions/TransactionList";
@@ -19,7 +18,6 @@ export function IncomePage() {
   const { monthKey } = useMonth();
   const { transactions, isLoading, isError, error, refetch, remove } = useTransactions(monthKey);
   const incomeMap = useIncomeSourceMap();
-  const { money } = useSettings();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
 
@@ -101,7 +99,9 @@ export function IncomePage() {
                 {bySource.map((s) => (
                   <div key={s.id} className="flex items-center justify-between text-sm">
                     <span className="truncate">{s.name}</span>
-                    <span className="font-medium tabular-nums">{money(s.amount)}</span>
+                    <span className="font-medium">
+                      <IncomeAmount value={s.amount} />
+                    </span>
                   </div>
                 ))}
               </CardContent>

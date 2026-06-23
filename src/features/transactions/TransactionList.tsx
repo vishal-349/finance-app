@@ -20,6 +20,8 @@ import { useAccountMap } from "@/hooks/useAccounts";
 import { useCreditCardMap } from "@/hooks/useCreditCards";
 import { useSavingsGoals } from "@/hooks/useSavingsGoals";
 import { useSettings } from "@/hooks/useSettings";
+import { useIncomePrivacy } from "@/hooks/useIncomePrivacy";
+import { IncomeEyeToggle } from "@/components/shared/IncomeAmount";
 import { formatDisplayDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/types";
@@ -46,6 +48,7 @@ export function TransactionList({
   const { all: goals } = useSavingsGoals();
   const goalMap = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
   const { money } = useSettings();
+  const { hidden: incomeHidden } = useIncomePrivacy();
   const [confirm, setConfirm] = useState<Transaction | null>(null);
 
   /** Per-type icon, colors, amount sign and primary label/chip. */
@@ -156,9 +159,10 @@ export function TransactionList({
               </div>
 
               <span className={cn("shrink-0 font-semibold tabular-nums", v.amountClass)}>
-                {v.sign}
-                {money(t.amount)}
+                {t.type === "income" && incomeHidden ? "••••••" : `${v.sign}${money(t.amount)}`}
               </span>
+
+              {t.type === "income" && <IncomeEyeToggle className="shrink-0" />}
 
               {(onEdit || onDelete) && (
                 <div className="flex shrink-0">
