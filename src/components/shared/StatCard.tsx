@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface StatCardProps {
   label: string;
-  value: string;
+  value: ReactNode;
   icon?: LucideIcon;
   hint?: string;
   accent?: "default" | "success" | "warning" | "destructive";
@@ -14,6 +15,9 @@ interface StatCardProps {
   to?: string;
   /** Shrinks the value text for tight, many-up grids (e.g. a 5-column row of large currency figures). */
   dense?: boolean;
+  /** Optional control rendered top-right (e.g. a privacy toggle). Rendered
+   *  OUTSIDE the card's link so it stays independently clickable. */
+  action?: ReactNode;
 }
 
 const ACCENT: Record<
@@ -42,7 +46,7 @@ const ACCENT: Record<
   },
 };
 
-export function StatCard({ label, value, icon: Icon, hint, accent = "default", to, dense }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, hint, accent = "default", to, dense, action }: StatCardProps) {
   const a = ACCENT[accent];
   const inner = (
     <Card variant="glass" interactive className="group relative h-full overflow-hidden">
@@ -54,7 +58,7 @@ export function StatCard({ label, value, icon: Icon, hint, accent = "default", t
           a.glow,
         )}
       />
-      {to && (
+      {to && !action && (
         <ArrowUpRight className="absolute right-3 top-3 h-3.5 w-3.5 text-muted-foreground/0 transition-colors duration-200 group-hover:text-muted-foreground" />
       )}
       <CardContent className="relative flex items-start justify-between gap-2 p-4">
@@ -79,12 +83,29 @@ export function StatCard({ label, value, icon: Icon, hint, accent = "default", t
     </Card>
   );
 
-  if (to) {
-    return (
-      <Link to={to} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-2xl" aria-label={`${label}: ${value}`}>
+  const ariaLabel = typeof value === "string" ? `${label}: ${value}` : label;
+  const body =
+    to ? (
+      <Link
+        to={to}
+        className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={ariaLabel}
+      >
         {inner}
       </Link>
+    ) : (
+      inner
+    );
+
+  // Action (e.g. privacy toggle) sits OUTSIDE the link as a positioned overlay,
+  // so it never nests an interactive control inside an anchor.
+  if (action) {
+    return (
+      <div className="relative h-full">
+        {body}
+        <div className="absolute right-2 top-2 z-10">{action}</div>
+      </div>
     );
   }
-  return inner;
+  return body;
 }

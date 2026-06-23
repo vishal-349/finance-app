@@ -2,13 +2,13 @@ import { useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
   TrendingDown,
   Banknote,
   PiggyBank,
   LineChart,
 } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
+import { IncomeAmount, IncomeEyeToggle } from "@/components/shared/IncomeAmount";
 import { DataState } from "@/components/shared/DataState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +49,12 @@ export function YearlyReport() {
 
       <DataState isLoading={isLoading} isError={isError} error={error} onRetry={refetch}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <StatCard label="Total Income" value={money(totals.totalIncome)} icon={TrendingUp} accent="success" />
+          <StatCard
+            label="Total Income"
+            value={<IncomeAmount value={totals.totalIncome} />}
+            accent="success"
+            action={<IncomeEyeToggle />}
+          />
           <StatCard label="Total Expenses" value={money(totals.totalExpenses)} icon={TrendingDown} />
           <StatCard
             label="Total Savings"

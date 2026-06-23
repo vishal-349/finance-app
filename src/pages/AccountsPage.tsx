@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   ArrowLeftRight,
   Banknote,
@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
+import { IncomeAmount } from "@/components/shared/IncomeAmount";
 import { DataState } from "@/components/shared/DataState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +41,7 @@ import { currentMonthKey } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import type { Account } from "@/types";
 
-function BreakdownRow({ label, value }: { label: string; value: string }) {
+function BreakdownRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <dt className="text-muted-foreground">{label}</dt>
@@ -203,7 +204,7 @@ export function AccountsPage() {
             {showCalc && (
               <dl className="mt-3 space-y-1.5 text-sm">
                 <BreakdownRow label="Opening balance" value={money(breakdown.opening)} />
-                <BreakdownRow label="Income" value={`+ ${money(breakdown.income)}`} />
+                <BreakdownRow label="Income" value={<IncomeAmount prefix="+ " value={breakdown.income} />} />
                 {transfersNet !== 0 && (
                   <BreakdownRow
                     label="Transfers (net)"

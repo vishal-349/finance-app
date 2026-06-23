@@ -28,10 +28,15 @@ const MONTHS = [
 export function PreferencesSection() {
   const { settings, update } = useSettings();
   const [threshold, setThreshold] = useState(String(settings.largeExpenseThreshold));
+  const [pin, setPin] = useState(settings.incomePin ?? "");
 
   useEffect(() => {
     setThreshold(String(settings.largeExpenseThreshold));
   }, [settings.largeExpenseThreshold]);
+
+  useEffect(() => {
+    setPin(settings.incomePin ?? "");
+  }, [settings.incomePin]);
 
   const save = async (patch: Parameters<typeof update>[0], label: string) => {
     try {
@@ -51,6 +56,18 @@ export function PreferencesSection() {
     }
     if (value !== settings.largeExpenseThreshold) {
       void save({ largeExpenseThreshold: value }, "Large expense threshold");
+    }
+  };
+
+  const commitPin = () => {
+    const next = pin.trim();
+    if (next.length > 0 && next.length !== 4) {
+      toast.error("PIN must be exactly 4 characters");
+      setPin(settings.incomePin ?? "");
+      return;
+    }
+    if (next !== (settings.incomePin ?? "")) {
+      void save({ incomePin: next }, next ? "Income PIN" : "Income PIN cleared");
     }
   };
 
@@ -150,6 +167,27 @@ export function PreferencesSection() {
             When you began tracking. Transactions before this date (e.g. pre-existing
             EMI installments) count toward schedules and history but never reduce Net
             Cash, balances, or card dues. Leave empty to count everything.
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="income-pin">Income PIN</Label>
+          <Input
+            id="income-pin"
+            type="password"
+            inputMode="text"
+            maxLength={4}
+            autoComplete="off"
+            placeholder="4 characters"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            onBlur={commitPin}
+            onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          />
+          <p className="text-xs text-muted-foreground">
+            A 4-character PIN (letters or numbers) needed to reveal income after you hide it
+            with the eye icon. Leave empty for no PIN. Note: a light privacy veil, not strong
+            security.
           </p>
         </div>
       </CardContent>

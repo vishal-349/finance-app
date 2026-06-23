@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, NAV_SECTIONS } from "./nav-items";
@@ -15,9 +15,15 @@ export function AppLayout() {
     <div className="min-h-screen bg-mesh">
       {/* Desktop sidebar — frosted glass over the ambient mesh */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border/60 bg-card/70 shadow-e2 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60 lg:flex">
-        <div className="flex h-16 items-center gap-2.5 border-b border-border/60 px-6">
-          <BrandMark />
-          <span className="text-lg font-bold tracking-tight">FinTrack</span>
+        <div className="flex h-16 items-center border-b border-border/60 px-6">
+          <Link
+            to="/"
+            aria-label="FinTrack — go to Dashboard"
+            className="flex items-center gap-2.5 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <BrandMark />
+            <span className="text-lg font-bold tracking-tight">FinTrack</span>
+          </Link>
         </div>
         <nav className="flex-1 space-y-4 overflow-y-auto p-3">
           {NAV_SECTIONS.map((section) => (
@@ -51,10 +57,14 @@ export function AppLayout() {
       {/* Main column */}
       <div className="lg:pl-60">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border/60 bg-background/70 px-4 shadow-e1 backdrop-blur-xl sm:px-6">
-          <div className="flex items-center gap-2 lg:hidden">
+          <Link
+            to="/"
+            aria-label="FinTrack — go to Dashboard"
+            className="flex items-center gap-2 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+          >
             <BrandMark />
             <span className="font-bold tracking-tight">FinTrack</span>
-          </div>
+          </Link>
           <div className="hidden lg:block" />
           <UserMenu />
         </header>

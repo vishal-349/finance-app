@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { TrendingUp, TrendingDown, Banknote, PiggyBank, LineChart, Percent } from "lucide-react";
+import { TrendingDown, Banknote, PiggyBank, LineChart, Percent } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
+import { IncomeAmount, IncomeEyeToggle } from "@/components/shared/IncomeAmount";
 import { DataState } from "@/components/shared/DataState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -81,7 +82,12 @@ export function MonthlyReport() {
 
       <DataState isLoading={isLoading} isError={isError} error={error} onRetry={refetch}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          <StatCard label="Income" value={money(summary.income)} icon={TrendingUp} accent="success" />
+          <StatCard
+            label="Income"
+            value={<IncomeAmount value={summary.income} />}
+            accent="success"
+            action={<IncomeEyeToggle />}
+          />
           <StatCard label="Expenses" value={money(summary.actualExpenses)} icon={TrendingDown} />
           <StatCard
             label="Net Savings"

@@ -12,6 +12,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { sumIncome } from "@/lib/derive";
 import { TransactionForm } from "@/features/transactions/TransactionForm";
 import { TransactionList } from "@/features/transactions/TransactionList";
+import { IncomeAmount, IncomeEyeToggle } from "@/components/shared/IncomeAmount";
 import type { Transaction } from "@/types";
 
 export function IncomePage() {
@@ -64,9 +65,14 @@ export function IncomePage() {
       />
 
       <Card>
-        <CardContent className="p-5">
-          <p className="text-sm text-muted-foreground">Total income this month</p>
-          <p className="text-3xl font-bold text-success">{money(total)}</p>
+        <CardContent className="flex items-start justify-between gap-2 p-5">
+          <div>
+            <p className="text-sm text-muted-foreground">Total income this month</p>
+            <p className="text-3xl font-bold text-success">
+              <IncomeAmount value={total} />
+            </p>
+          </div>
+          <IncomeEyeToggle />
         </CardContent>
       </Card>
 

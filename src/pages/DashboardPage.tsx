@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, PiggyBank, Wallet, Banknote, History } from "lucide-react";
+import { TrendingDown, PiggyBank, Wallet, Banknote, History } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MonthPicker } from "@/components/shared/MonthPicker";
 import { StatCard } from "@/components/shared/StatCard";
@@ -11,6 +11,7 @@ import { ModuleWidgets } from "@/features/dashboard/ModuleWidgets";
 import { AccountsOverview } from "@/features/dashboard/AccountsOverview";
 import { AvailableAfterSettlement } from "@/features/dashboard/AvailableAfterSettlement";
 import { ActivityHistoryDialog } from "@/features/dashboard/ActivityHistoryDialog";
+import { IncomeAmount, IncomeEyeToggle } from "@/components/shared/IncomeAmount";
 import { CategoryHistoryDialog } from "@/features/transactions/CategoryHistoryDialog";
 import { useMonth } from "@/hooks/useMonth";
 import { useMonthData } from "@/hooks/useMonthData";
@@ -64,11 +65,11 @@ export function DashboardPage() {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <StatCard
               label="Income"
-              value={money(summary.income)}
-              icon={TrendingUp}
+              value={<IncomeAmount value={summary.income} />}
               accent="success"
               to="/income"
               dense
+              action={<IncomeEyeToggle />}
             />
             <StatCard
               label="Spending"

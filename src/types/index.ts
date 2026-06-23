@@ -337,6 +337,12 @@ export interface UserSettings {
   defaultLandingPage: string;
   /** "full" shows charts + widgets; "compact" shows stat cards + widgets only. */
   dashboardLayout: "full" | "compact";
+  /**
+   * Optional 4-character PIN that gates revealing hidden income amounts. A
+   * light privacy veil (not cryptographic auth) — stored as-is on the user's
+   * own document. Empty/unset = revealing income needs no PIN.
+   */
+  incomePin?: string;
   displayName?: string;
   email?: string;
 }

@@ -13,6 +13,7 @@ import { TransactionForm } from "@/features/transactions/TransactionForm";
 import { TransactionList } from "@/features/transactions/TransactionList";
 import { TransactionFilters } from "@/features/transactions/TransactionFilters";
 import { useTransactionFilters } from "@/features/transactions/useTransactionFilters";
+import { IncomeAmount, IncomeEyeToggle } from "@/components/shared/IncomeAmount";
 import type { Transaction } from "@/types";
 
 export function TransactionsPage() {
@@ -56,9 +57,14 @@ export function TransactionsPage() {
 
       <div className="grid grid-cols-2 gap-3">
         <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Income</p>
-            <p className="text-lg font-semibold text-success">{money(totals.income)}</p>
+          <CardContent className="flex items-start justify-between gap-2 p-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Income</p>
+              <p className="text-lg font-semibold text-success">
+                <IncomeAmount value={totals.income} />
+              </p>
+            </div>
+            <IncomeEyeToggle />
           </CardContent>
         </Card>
         <Card>

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown, Info, Wallet } from "lucide-react";
 import { useAccountBalances, useCashBreakdown } from "@/hooks/useAccounts";
 import { useSettings } from "@/hooks/useSettings";
+import { IncomeAmount } from "@/components/shared/IncomeAmount";
 import { formatDisplayDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
@@ -119,7 +120,7 @@ export function AccountsOverview() {
               }
               value={money(breakdown.opening)}
             />
-            <CalcRow label="Income" value={`+ ${money(breakdown.income)}`} />
+            <CalcRow label="Income" value={<IncomeAmount prefix="+ " value={breakdown.income} />} />
             {transfersNet !== 0 && (
               <CalcRow
                 label="Transfers (net)"
@@ -154,7 +155,7 @@ export function AccountsOverview() {
   );
 }
 
-function CalcRow({ label, value }: { label: string; value: string }) {
+function CalcRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <dt className="text-primary-foreground/80">{label}</dt>
