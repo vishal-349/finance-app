@@ -8,17 +8,17 @@ import { COLLECTIONS } from "./firestore";
  * archive or delete everything afterwards.
  */
 
+// Generic, universal starters only — nothing personal. New users rename/add
+// their own from here.
 const DEFAULT_EXPENSE_CATEGORIES = [
-  "Grocery",
+  "Groceries",
   "Rent",
-  "Electricity",
-  "Petrol",
-  "WiFi",
-  "Mobile Bill",
-  "Gym",
+  "Utilities",
+  "Transport",
+  "Dining Out",
   "Shopping",
-  "Home Support",
-  "Weekend / Fun",
+  "Health",
+  "Entertainment",
 ];
 
 const DEFAULT_INCOME_CATEGORIES = ["Salary", "Freelancing", "Other Income"];
