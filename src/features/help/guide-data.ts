@@ -75,6 +75,13 @@ export const GUIDE: GuideSection[] = [
         ],
       },
       {
+        title: "Jump to the Dashboard from the logo",
+        where: "“FinTrack” logo / name — top-left sidebar (or header on mobile)",
+        steps: [
+          "Click the FinTrack logo or name from anywhere to return to the Dashboard.",
+        ],
+      },
+      {
         title: "Switch the month (month picker)",
         where: "Top-right of Dashboard, Transactions, Income, Budgets",
         steps: [
@@ -135,7 +142,15 @@ export const GUIDE: GuideSection[] = [
           "Left this month = Income − Spending − Saved/invested, with your savings rate → opens Reports.",
           "Click any card to drill into the underlying records.",
         ],
-        tip: "All values update automatically as you add or edit transactions, budgets and savings.",
+        tip: "The Income card has an eye to hide income everywhere — see the Income section. All values update automatically as you add or edit transactions, budgets and savings.",
+      },
+      {
+        title: "Last updated & activity history",
+        where: "“Last updated …” line just under the page title",
+        steps: [
+          "Shows the date & time of your most recent change anywhere in the app (DD/MM/YY, hh:mm AM/PM).",
+          "Click it to open the Activity History — recent Add / Update / Delete actions with the module, record, amount, what changed (old → new), time and who made the change.",
+        ],
       },
       {
         title: "Module widgets",
@@ -235,6 +250,16 @@ export const GUIDE: GuideSection[] = [
           "“By source” groups income by salary, freelance, interest, etc., highest first.",
           "Income without an assigned source is grouped as “Other”.",
         ],
+      },
+      {
+        title: "Hide / show income (privacy)",
+        where: "Eye icon on income cards and on each income row",
+        steps: [
+          "Click the eye to mask every income figure across the whole app at once — the total, each entry, the By-source breakdown, and the Dashboard/Reports income cards. It stays hidden after a reload.",
+          "Click the eye again to reveal — you'll be asked for your PIN if one is set.",
+          "Every income entry has its own eye, so you can hide or reveal from anywhere.",
+        ],
+        tip: "Set or change the unlock PIN in Settings → Preferences → Income PIN. With no PIN set, revealing needs no code.",
       },
     ],
   },
@@ -570,7 +595,7 @@ export const GUIDE: GuideSection[] = [
           "Click “Add subscription” and name it (e.g. “Netflix”).",
           "Choose Monthly or Yearly, enter the amount and the next charge date.",
           "Pick what it's paid from, an optional category, and toggle Auto-renew.",
-          "Save — auto-renew subscriptions create their charge automatically each cycle.",
+          "Save — if an auto-renew charge is already due it's recorded right away (and on each future cycle), showing up in Transactions.",
         ],
       },
       {
@@ -751,8 +776,9 @@ export const GUIDE: GuideSection[] = [
           "Set your currency, theme (Light/Dark/System).",
           "Set the large-expense threshold and the financial-year start month.",
           "Set a Tracking start date — the day you began tracking.",
+          "Set an Income PIN (4 characters) — required to reveal income once it's hidden.",
         ],
-        tip: "Transactions dated before your tracking-start date count toward EMI schedules and history but never reduce Net cash, account balances or card dues. Leave it empty to count everything.",
+        tip: "Transactions dated before your tracking-start date count toward EMI schedules and history but never reduce Net cash, account balances or card dues. Leave it empty to count everything. Clear the Income PIN field to remove PIN protection.",
       },
       {
         title: "Export & backup your data",
