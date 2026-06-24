@@ -343,6 +343,11 @@ export interface UserSettings {
    * own document. Empty/unset = revealing income needs no PIN.
    */
   incomePin?: string;
+  /**
+   * Whether income amounts are masked across the app. Account-level (synced
+   * via Firestore) so the choice follows the user across devices/browsers.
+   */
+  incomeHidden?: boolean;
   displayName?: string;
   email?: string;
 }
