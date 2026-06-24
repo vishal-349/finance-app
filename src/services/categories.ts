@@ -8,6 +8,7 @@ import {
   listDocs,
   updateDocById,
 } from "./firestore";
+import { deleteBudgetsForCategory } from "./budgets";
 
 const NAME = COLLECTIONS.categories;
 
@@ -45,8 +46,11 @@ export const archiveCategory = (uid: string, id: string) =>
 export const restoreCategory = (uid: string, id: string) =>
   updateCategory(uid, id, { archived: false });
 
-export const deleteCategory = (uid: string, id: string) =>
-  deleteDocById(uid, NAME, id);
+/** Delete a category and cascade-remove its budgets so none are orphaned. */
+export async function deleteCategory(uid: string, id: string): Promise<void> {
+  await deleteBudgetsForCategory(uid, id);
+  await deleteDocById(uid, NAME, id);
+}
 
 /** Persist a new ordering in one atomic batch. */
 export async function reorderCategories(

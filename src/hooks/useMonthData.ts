@@ -51,6 +51,13 @@ export function useMonthData(monthKey: MonthKey) {
     [txns.transactions],
   );
 
+  // Categories shown in the budget list — Planned must only count budgets for
+  // these, so a budget orphaned by a deleted category can't inflate the total.
+  const liveCategoryIds = useMemo(
+    () => new Set(categorySummaries.map((s) => s.category.id)),
+    [categorySummaries],
+  );
+
   const summary = useMemo(
     () =>
       buildMonthSummary(
@@ -60,8 +67,9 @@ export function useMonthData(monthKey: MonthKey) {
         efForMonth,
         sipForMonth,
         goalForMonth,
+        liveCategoryIds,
       ),
-    [monthKey, budgets.budgets, txns.transactions, efForMonth, sipForMonth, goalForMonth],
+    [monthKey, budgets.budgets, txns.transactions, efForMonth, sipForMonth, goalForMonth, liveCategoryIds],
   );
 
   return {

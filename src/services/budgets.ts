@@ -44,6 +44,13 @@ export async function upsertBudget(
 export const deleteBudget = (uid: string, id: string) =>
   deleteDocById(uid, NAME, id);
 
+/** Remove every budget (across all months) for a category — used when the
+ *  category itself is deleted, so no orphaned budgets are left behind. */
+export async function deleteBudgetsForCategory(uid: string, categoryId: string): Promise<void> {
+  const all = await listDocs<Budget>(uid, NAME, where("categoryId", "==", categoryId));
+  await Promise.all(all.map((b) => deleteDocById(uid, NAME, b.id)));
+}
+
 /**
  * Copy every budget from `from` month into `to` month. Existing budgets in the
  * target month for the same category are overwritten; others are left intact.

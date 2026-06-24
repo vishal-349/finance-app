@@ -166,13 +166,20 @@ export function buildMonthSummary(
   emergencyFundForMonth: number,
   sipForMonth: number,
   goalForMonth: number,
+  /** When provided, only budgets for these (live) categories count toward
+   *  Planned — so a budget left behind by a deleted category never inflates it. */
+  validCategoryIds?: Set<string>,
 ): MonthSummary {
   const income = sumIncome(transactions);
   const actualExpenses = sumExpenses(transactions);
   // Dedupe by category so any accidental duplicate budget docs can't
   // double-count toward the planned total.
   const plannedByCategory = new Map(budgets.map((b) => [b.categoryId, b.amount]));
-  const plannedExpenses = [...plannedByCategory.values()].reduce((acc, v) => acc + v, 0);
+  const plannedExpenses = [...plannedByCategory.entries()].reduce(
+    (acc, [categoryId, amount]) =>
+      acc + (!validCategoryIds || validCategoryIds.has(categoryId) ? amount : 0),
+    0,
+  );
   // Money deliberately set aside this month — all of it leaves available cash
   // (each draws from an account), so it's treated consistently as an outflow.
   const savedAndInvested = emergencyFundForMonth + sipForMonth + goalForMonth;
