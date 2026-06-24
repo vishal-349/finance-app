@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataState } from "@/components/shared/DataState";
+import { SearchInput } from "@/components/shared/SearchInput";
 import {
   ReorderControls,
   moveItem,
@@ -72,6 +73,7 @@ function CategoryList({
 }) {
   const items = type === "expense" ? controller.expense : controller.income;
   const [showArchived, setShowArchived] = useState(false);
+  const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [name, setName] = useState("");
@@ -79,7 +81,10 @@ function CategoryList({
   const [pace, setPace] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<Category | null>(null);
 
-  const visible = items.filter((i) => (showArchived ? true : !i.archived));
+  const q = query.trim().toLowerCase();
+  const visible = items
+    .filter((i) => (showArchived ? true : !i.archived))
+    .filter((i) => (q ? i.name.toLowerCase().includes(q) : true));
 
   const openAdd = () => {
     setEditing(null);
@@ -132,7 +137,13 @@ function CategoryList({
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex items-center gap-2">
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder={`Search ${type} categories…`}
+          className="flex-1"
+        />
         <Button size="sm" onClick={openAdd}>
           <Plus className="h-4 w-4" /> Add category
         </Button>
@@ -144,12 +155,14 @@ function CategoryList({
         error={controller.error}
         onRetry={controller.refetch}
         isEmpty={visible.length === 0}
-        emptyTitle="No categories yet"
-        emptyMessage={`Add your first ${type} category.`}
+        emptyTitle={q ? "No matches" : "No categories yet"}
+        emptyMessage={q ? "No categories match your search." : `Add your first ${type} category.`}
         emptyAction={
-          <Button size="sm" onClick={openAdd}>
-            <Plus className="h-4 w-4" /> Add category
-          </Button>
+          q ? undefined : (
+            <Button size="sm" onClick={openAdd}>
+              <Plus className="h-4 w-4" /> Add category
+            </Button>
+          )
         }
       >
         <ul className="divide-y rounded-lg border">
@@ -158,7 +171,7 @@ function CategoryList({
               key={c.id}
               className={cn("flex items-center gap-2 px-2 py-2", c.archived && "opacity-60")}
             >
-              {!showArchived && (
+              {!showArchived && !q && (
                 <ReorderControls index={index} count={visible.length} onMove={handleMove} />
               )}
               <span

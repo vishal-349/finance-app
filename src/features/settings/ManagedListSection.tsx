@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataState } from "@/components/shared/DataState";
+import { SearchInput } from "@/components/shared/SearchInput";
 import {
   ReorderControls,
   moveItem,
@@ -62,9 +63,13 @@ export function ManagedListSection<T extends NamedEntity>({
   const [editing, setEditing] = useState<T | null>(null);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
+  const [query, setQuery] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<T | null>(null);
 
-  const visible = all.filter((i) => (showArchived ? true : !i.archived));
+  const q = query.trim().toLowerCase();
+  const visible = all
+    .filter((i) => (showArchived ? true : !i.archived))
+    .filter((i) => (q ? i.name.toLowerCase().includes(q) : true));
 
   const openAdd = () => {
     setName("");
@@ -120,18 +125,29 @@ export function ManagedListSection<T extends NamedEntity>({
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder={`Search ${itemNoun.toLowerCase()}s…`}
+        />
         <DataState
           isLoading={isLoading}
           isError={isError}
           error={error}
           onRetry={refetch}
           isEmpty={visible.length === 0}
-          emptyTitle={`No ${itemNoun.toLowerCase()}s yet`}
-          emptyMessage={`Add your first ${itemNoun.toLowerCase()} to get started.`}
+          emptyTitle={q ? "No matches" : `No ${itemNoun.toLowerCase()}s yet`}
+          emptyMessage={
+            q
+              ? `No ${itemNoun.toLowerCase()}s match your search.`
+              : `Add your first ${itemNoun.toLowerCase()} to get started.`
+          }
           emptyAction={
-            <Button size="sm" onClick={openAdd}>
-              <Plus className="h-4 w-4" /> Add {itemNoun}
-            </Button>
+            q ? undefined : (
+              <Button size="sm" onClick={openAdd}>
+                <Plus className="h-4 w-4" /> Add {itemNoun}
+              </Button>
+            )
           }
         >
           <ul className="divide-y rounded-lg border">
@@ -143,7 +159,7 @@ export function ManagedListSection<T extends NamedEntity>({
                   item.archived && "opacity-60",
                 )}
               >
-                {!showArchived && (
+                {!showArchived && !q && (
                   <ReorderControls
                     index={index}
                     count={visible.length}

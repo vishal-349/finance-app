@@ -12,6 +12,7 @@ import { useMonthData } from "@/hooks/useMonthData";
 import { useSettings } from "@/hooks/useSettings";
 import { prevMonthKey, formatMonthKeyShort } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { BudgetRow } from "@/features/budgets/BudgetRow";
 import { CategoryHistoryDialog } from "@/features/transactions/CategoryHistoryDialog";
 import type { CategorySummary } from "@/types";
@@ -26,6 +27,7 @@ export function BudgetsPage() {
   const { money } = useSettings();
   const [history, setHistory] = useState<CategorySummary | null>(null);
   const [filter, setFilter] = useState<CategoryFilter>("all");
+  const [query, setQuery] = useState("");
 
   // A category "has a budget" when its planned amount is > 0.
   const withBudget = useMemo(
@@ -41,8 +43,12 @@ export function BudgetsPage() {
     with: withBudget.length,
     without: withoutBudget.length,
   };
-  const visible =
+  const base =
     filter === "with" ? withBudget : filter === "without" ? withoutBudget : categorySummaries;
+  const q = query.trim().toLowerCase();
+  const visible = q
+    ? base.filter((s) => s.category.name.toLowerCase().includes(q))
+    : base;
 
   const handleCopy = async () => {
     const from = prevMonthKey(monthKey);
@@ -124,6 +130,12 @@ export function BudgetsPage() {
         })}
       </div>
 
+      <SearchInput
+        value={query}
+        onChange={setQuery}
+        placeholder="Search categories…"
+      />
+
       <DataState
         isLoading={isLoading}
         isError={isError}
@@ -138,9 +150,11 @@ export function BudgetsPage() {
           <CardContent className="divide-y p-0">
             {visible.length === 0 ? (
               <p className="p-6 text-center text-sm text-muted-foreground">
-                {filter === "without"
-                  ? "Every category has a budget set. 🎉"
-                  : "No categories with a budget yet."}
+                {q
+                  ? "No categories match your search."
+                  : filter === "without"
+                    ? "Every category has a budget set. 🎉"
+                    : "No categories with a budget yet."}
               </p>
             ) : (
               visible.map((s) => (
